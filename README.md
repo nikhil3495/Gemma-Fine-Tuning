@@ -16,12 +16,19 @@ LoRA fine-tuning of **Gemma 3** with **Keras 3 + JAX + keras_hub** on a 30k-reci
 
 The benchmark compares **LoRA fine-tuned Gemma vs base Gemma vs zero-shot Gemini** on perplexity, pairing validity (PMI and shared flavor compounds), structure validity, and preference: an LLM-judge proxy plus a blind human A/B tool. Every number below is generated from `results/*.json` by a script in this repo.
 
-![demo](docs/demo.png)
+_Demo screenshot: added after the first deploy (the app runs locally with `python app/app.py`)._
 
 ## Results
 
 <!-- RESULTS:START -->
-_Not yet generated. Run `make eval`._
+**Status: benchmark not yet run.** The real CPU smoke fine-tune (Gemma 3 270M + LoRA r=8, 1,826 train / 56 val examples) started, but the host stopped it at **step 50 of 400** because system memory ran critically low. No adapter was saved, so there are no generation-based metrics yet. What did run (from [`results/train_smoke_partial.json`](results/train_smoke_partial.json) and [`results/train_smoke_log.csv`](results/train_smoke_log.csv)):
+
+| Measurement (smoke, partial) | Value |
+|---|---|
+| Base Gemma 3 270M val perplexity (exact, response tokens, 56 held-out val examples) | 31.13 |
+| Val loss after 50 LoRA steps (Keras batch-mean NLL on response tokens) | 2.098 |
+
+Complete it with `python -m recipe_gemma.train --config configs/train_smoke.yaml && make eval` (see [docs/BLOCKERS.md](docs/BLOCKERS.md)). This block is then regenerated from `results/*.json`.
 <!-- RESULTS:END -->
 
 Full report with plots: [results/report.md](results/report.md). Metric definitions and known biases: [docs/EVAL_PROTOCOL.md](docs/EVAL_PROTOCOL.md).
@@ -94,7 +101,7 @@ Full run: `notebooks/train_kaggle_tpu.ipynb` (Gemma 3 1B, LoRA r=16, seq 512) or
 
 ## Limitations (honest)
 
-- The committed numbers come from a **smoke run**: Gemma 3 **270M**, a few hundred LoRA steps on a laptop CPU, evaluated on 25 + 25 held-out prompts. CIs are wide. The full 1B run is configured but not yet run (needs a TPU/GPU).
+- The smoke run was **interrupted at step 50/400** (host memory pressure); the benchmark tables are pending its completion. Once complete, the numbers come from a **smoke run**: Gemma 3 **270M**, a few hundred LoRA steps on a laptop CPU, evaluated on 25 + 25 held-out prompts. CIs are wide. The full 1B run is configured but not yet run (needs a TPU/GPU).
 - The Gemini baseline and LLM judge need an API key that was unavailable at build time; those cells say so instead of showing numbers.
 - Human preference is **pending annotation**. LLM-judge numbers are a proxy and are labelled as such.
 - Task-B targets and the PMI metric share the same training-corpus statistics (see EVAL_PROTOCOL "threats to validity").

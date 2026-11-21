@@ -23,3 +23,5 @@ One line per decision: what was chosen and why. Newest at the bottom.
 - **Judge ties when the two presentation orders disagree** (cancels position bias); judge temperature 0.
 - **Lint:** E501 ignored only for `eval/report.py` (Markdown template strings); notebooks excluded from ruff.
 - **Annotation agreement measured on the winning model, not on A/B position**, since every annotator sees a different left/right order.
+- **Smoke run interrupted at step 50/400 (host memory pressure), not auto-restarted.** The agent harness forbids restarting a job it reaped for memory. The real progress was recorded with `scripts/collect_partial_train.py` -> `results/train_smoke_partial.json`; README/BLOCKERS say "pending" instead of showing benchmark numbers.
+- **No v1.0.0 tag/release yet:** tagging a release without the benchmark it advertises would be misleading. Tag after the eval completes (`git tag v1.0.0 && gh release create v1.0.0 results/report.md`).

@@ -1,9 +1,10 @@
 # Blockers (need the repo owner)
 
-Everything else is built, tested and run. Each item below is something only you can provide. In each case the code path exists and degrades gracefully.
+Everything else is built, unit/integration-tested (57 tests, CI green) and pushed. Each item below is something only you can provide. In each case the code path exists and degrades gracefully.
 
 | # | Blocker | Impact now | What runs once fixed |
 |---|---|---|---|
+| 0 | **Smoke training interrupted at step 50/400.** Claude Code's background-job reaper killed it when the laptop ran critically low on memory (training uses ~7 GB of 15.6 GB). It must not be auto-restarted by the agent | No adapter yet, so no generations, metrics, judge, demo outputs or model card | Run it yourself in a normal terminal (not subject to the reaper), with other apps closed: `python -m recipe_gemma.train --config configs/train_smoke.yaml` (~60 min), then `python -m recipe_gemma.eval --config configs/eval.yaml && python -m recipe_gemma.eval.report --config configs/eval.yaml && python scripts/make_model_card.py` (~40 min). Or start Claude Code with `CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP=1` and ask it to resume |
 | 1 | **`HF_TOKEN` not available to the build session** (the `export HF_TOKEN=...` in the launch shell never reached it; checked process env, Windows User/Machine env, WSL and `~/.cache/huggingface/token`) | Adapter not pushed to `nikhil3495/gemma-recipe-lora`; **HF Space `nikhil3495/gemma-recipe-pairing` not deployed** | `scripts/push_adapter.py`, `scripts/deploy_space.py` (waits for the build and checks HTTP 200) |
 | 2 | **`GEMINI_API_KEY` absent** | Zero-shot Gemini column and LLM-judge preference show "not run (no API key)". Both are implemented and tested with a mocked client | `python -m recipe_gemma.eval` generates only the missing Gemini outputs (base/fine-tuned are cached), then the judge runs |
 | 3 | **No NVIDIA GPU / TPU locally** (Intel Iris Xe) and **no Kaggle credentials** | Only the CPU *smoke* run (Gemma 3 270M, 400 steps) was possible; the full run (Gemma 3 1B, `configs/train_full.yaml`) was not | `notebooks/train_kaggle_tpu.ipynb` or `notebooks/train_colab.ipynb` |
@@ -15,6 +16,9 @@ Everything else is built, tested and run. Each item below is something only you 
 ```bash
 cd Gemma-Fine-Tuning && source .venv/Scripts/activate   # Linux/macOS: .venv/bin/activate
 export HF_TOKEN=hf_...  GEMINI_API_KEY=...               # never commit these
+
+# 0) Finish the smoke run (in your own terminal; ~60 min train + ~40 min eval on CPU)
+python -m recipe_gemma.train --config configs/train_smoke.yaml
 
 # 1) Gemini baseline + LLM judge (reuses cached Gemma generations), then report, model card, README table
 python -m recipe_gemma.eval --config configs/eval.yaml
