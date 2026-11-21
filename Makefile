@@ -11,8 +11,7 @@ setup:
 	$(PY) -m pip install -e ".[train,eval,app,dev]" tensorflow-cpu safetensors sentencepiece
 
 data:
-	$(PY) -m recipe_gemma.data.build --config configs/data.yaml
-	$(PY) -m recipe_gemma.flavor.build --config configs/data.yaml
+	$(PY) -m recipe_gemma.data.build --config configs/data.yaml  # also builds the flavor graph
 
 train:
 	$(PY) -m recipe_gemma.train --config configs/train_$(CONFIG).yaml

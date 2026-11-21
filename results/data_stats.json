@@ -1,0 +1,78 @@
+{
+  "meta": {
+    "git_sha": "2e21dbf-dirty",
+    "timestamp_utc": "2026-11-21T13:50:30+00:00",
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "config_hash": "6678d67eeb2d",
+    "config_path": "configs/data.yaml"
+  },
+  "stats": {
+    "flavor_graph": {
+      "nodes": 1509,
+      "edges": 221777
+    },
+    "rows_in_shard": 536812,
+    "rows_scanned": 150000,
+    "parsed": 150000,
+    "after_filters": 131616,
+    "after_dedupe": 61925,
+    "sampled": 30000,
+    "ingredient_lines": 227197,
+    "ingredient_lines_mapped_to_graph": 161548,
+    "cuisine_counts": {
+      "North American": 18453,
+      "any": 8335,
+      "Southern European": 1317,
+      "Latin American": 1306,
+      "East Asian": 313,
+      "Southeast Asian": 79,
+      "South Asian": 59,
+      "Eastern European": 50,
+      "African": 44,
+      "Western European": 25,
+      "Middle Eastern": 13,
+      "Northern European": 6
+    },
+    "recipe_splits": {
+      "train": 26990,
+      "val": 1501,
+      "test": 1509
+    },
+    "examples": {
+      "train": {
+        "recipe": 25363,
+        "pairing": 449
+      },
+      "val": {
+        "recipe": 1408,
+        "pairing": 16
+      },
+      "test": {
+        "recipe": 1435,
+        "pairing": 72
+      }
+    },
+    "anchors": {
+      "train": 458,
+      "val": 19,
+      "test": 74
+    },
+    "profiles": {
+      "smoke": {
+        "train": 2000,
+        "train_pairing": 400,
+        "val": 100
+      },
+      "full": {
+        "train": 25363,
+        "train_pairing": 2536,
+        "val": 500
+      }
+    },
+    "eval_prompts": {
+      "recipe": 100,
+      "pairing": 72
+    }
+  }
+}

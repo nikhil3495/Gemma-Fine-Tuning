@@ -1,0 +1,37 @@
+# Data pipeline config: python -m recipe_gemma.data.build --config configs/data.yaml
+seed: 1234
+
+recipes:
+  hf_dataset: corbt/all-recipes
+  # Only one parquet shard is needed for a 30k sample (~340k rows); avoids an 800 MB download.
+  shard_file: data/train-00000-of-00004-237b1b1141fdcfa1.parquet
+  text_column: input
+  max_rows_scan: 150000
+  n_recipes: 30000          # after cleaning + dedupe (full run)
+  min_ingredients: 3
+  min_steps: 2
+  max_chars: 2000
+
+split: {train: 0.90, val: 0.05, test: 0.05}
+
+flavor:
+  graph_out: data/artifacts/flavor_graph.json.gz
+  raw_dir: data/flavor/raw
+
+pairing:
+  min_anchor_count: 10      # anchor must appear in >= this many training recipes
+  min_pair_count: 3         # partner must co-occur >= this many times
+  top_k: 5
+  anchor_split: {train: 0.80, val: 0.05, test: 0.15}   # held-out anchors for Task B eval
+  stats_out: data/artifacts/cooccur_train.json.gz
+
+recipe_task:
+  max_prompt_ingredients: 4
+  staples: [salt, water, black_pepper, sugar, vegetable_oil, wheat, butter, egg, milk, baking_powder, baking_soda, ice, olive_oil]
+
+profiles:
+  smoke: {train: 2000, val: 100, eval_per_task: 25, pairing_frac: 0.2}
+  full: {train: null, val: 500, eval_per_task: 100, pairing_frac: 0.1}   # null = all
+
+out_dir: data/processed
+eval_prompts_out: data/artifacts/eval_prompts.jsonl
