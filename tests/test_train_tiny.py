@@ -80,3 +80,53 @@ def test_train_end_to_end(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> No
     assert saved["meta"]["config_hash"] and saved["meta"]["model_preset"] == "tiny-random"
     assert math.isfinite(saved["val_perplexity"]["fine_tuned"]["ppl"])
     assert (tmp_path / "log.csv").read_text(encoding="utf-8").startswith("epoch")
+
+
+def _tiny_cfg(tmp_path: Path, max_steps: int = 4) -> dict:
+    cfg = load_config(ROOT / "configs" / "train_tiny.yaml")
+    cfg["train"]["max_steps"] = max_steps
+    cfg["out"] = {
+        "dir": str(tmp_path / "ckpt"),
+        "results": str(tmp_path / "res.json"),
+        "log_csv": str(tmp_path / "log.csv"),
+        "tensorboard": None,
+    }
+    return cfg
+
+
+def test_gradient_accumulation_updates_every_k_microbatches() -> None:
+    from recipe_gemma.train.trainer import make_optimizer
+
+    lm = TinyLM(seed=3)
+    lm.enable_lora(2)
+    x, y, sw = lm.encode(["ab"] * 4, ["cdef"] * 4, seq_len=16)
+    opt = make_optimizer({"lr": 1e-2, "grad_accum_steps": 4, "weight_decay": 0.0}, 10)
+    lm.model.compile(
+        optimizer=opt, loss=keras.losses.SparseCategoricalCrossentropy(from_logits=True)
+    )
+    b = lm._lora_layers()[0].lora_kernel_b  # LoRA B starts at zero and gets a gradient
+    before = np.asarray(b).copy()
+    lm.model.fit({k: v[:3] for k, v in x.items()}, y[:3], sample_weight=sw[:3],
+                 batch_size=1, epochs=1, verbose=0, shuffle=False)  # fmt: skip
+    np.testing.assert_array_equal(np.asarray(b), before)  # 3 micro-batches: no update yet
+    lm.model.fit({k: v[3:] for k, v in x.items()}, y[3:], sample_weight=sw[3:],
+                 batch_size=1, epochs=1, verbose=0, shuffle=False)  # fmt: skip
+    assert not np.array_equal(np.asarray(b), before)  # 4th micro-batch applies the update
+    assert int(opt.iterations) == 1  # one optimizer step
+
+
+def test_checkpoints_and_resume(tmp_path: Path) -> None:
+    first = train(_tiny_cfg(tmp_path, max_steps=2))  # "interrupted" after step 2
+    ckpt = tmp_path / "ckpt" / "ckpt"
+    assert (ckpt / "step_00002" / "adapter.lora.npz").exists() and (ckpt / "best").exists()
+    state = json.loads((ckpt / "state.json").read_text(encoding="utf-8"))
+    assert state["step"] == 2 and state["latest"] == "step_00002"
+
+    res = train(_tiny_cfg(tmp_path, max_steps=4), resume=True)
+    assert res["training"]["resumed_from_step"] == 2
+    assert res["training"]["steps_run"] == 4
+    assert res["training"]["history"]["step"] == [2, 4]
+    assert res["val_perplexity"]["base"] == first["val_perplexity"]["base"]  # reused
+    assert (ckpt / "step_00004").exists()
+    rows = [r for r in (tmp_path / "log.csv").read_text(encoding="utf-8").splitlines() if r]
+    assert len(rows) == 3  # header + one row per validation, appended across the resume

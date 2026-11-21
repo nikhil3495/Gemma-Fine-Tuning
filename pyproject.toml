@@ -25,6 +25,7 @@ train = [
   "keras-hub==0.33.0",
   "huggingface_hub>=1.0",
   "tensorboard>=2.17",
+  "psutil>=5.9",
 ]
 eval = [
   "matplotlib>=3.8",
@@ -38,6 +39,7 @@ gcp = [
 ]
 dev = [
   "pytest>=8",
+  "psutil>=5.9",
   "ruff>=0.6",
 ]
 

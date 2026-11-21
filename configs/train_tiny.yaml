@@ -16,6 +16,7 @@ lora:
 train:
   seq_len: 448
   batch_size: 2
+  grad_accum_steps: 2
   max_steps: 4
   eval_every: 2
   log_every: 1
