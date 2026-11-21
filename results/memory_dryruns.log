@@ -1,0 +1,12 @@
+[dryrun] 2026-11-21 20:21:38,005 INFO available RAM before load: 1.79 GB
+[dryrun] 2026-11-21 20:21:54,378 INFO train=1396 val=4 dropped={'train': 604, 'val': 36}
+[dryrun] 2026-11-21 20:22:04,413 INFO base val ppl=33.270 (rss 1.54 GB)
+[dryrun] [train] step=5 loss=3.0961 sec_per_step=7.69 rss_gb=2.88 peak_gb=3.24
+[dryrun] [eval] step=5 loss=3.0961 val_loss=3.0772
+[dryrun] [done] steps=5 peak_rss_gb=3.24 val_ppl base=33.270 tuned=21.417
+[dryrun_lowmem] 2026-11-21 20:23:24,785 INFO available RAM before load: 3.46 GB
+[dryrun_lowmem] 2026-11-21 20:23:41,170 INFO train=576 val=4 dropped={'train': 1424, 'val': 85}
+[dryrun_lowmem] 2026-11-21 20:23:50,662 INFO base val ppl=24.938 (rss 1.66 GB)
+[dryrun_lowmem] [train] step=5 loss=2.7838 sec_per_step=6.94 rss_gb=2.68 peak_gb=3.37
+[dryrun_lowmem] [eval] step=5 loss=2.7838 val_loss=3.0735
+[dryrun_lowmem] [done] steps=5 peak_rss_gb=3.37 val_ppl base=24.938 tuned=21.181

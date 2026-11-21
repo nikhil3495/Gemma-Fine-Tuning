@@ -1,0 +1,9 @@
+# Lower-memory fallback for the CPU smoke run (seq 192, LoRA rank 4); same data, same schedule.
+extends: train_smoke.yaml
+run_name: smoke
+
+lora:
+  rank: 4
+
+train:
+  seq_len: 192
