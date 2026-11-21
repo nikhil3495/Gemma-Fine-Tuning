@@ -34,7 +34,7 @@ def main() -> int:
         return 1
     token = os.environ.get("HF_TOKEN")
     if not token:
-        print("HF_TOKEN not set: skipping Hub upload (see docs/BLOCKERS.md).")
+        print("HF_TOKEN not set: skipping Hub upload (optional; unused offline).")
         return 2
     from huggingface_hub import HfApi
 

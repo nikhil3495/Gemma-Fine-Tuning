@@ -27,9 +27,10 @@ from recipe_gemma.utils.config import (
     write_json,
     write_jsonl,
 )
+from recipe_gemma.utils.memory import free_memory
 
 log = logging.getLogger(__name__)
-NO_KEY = "not run (no API key)"
+NO_KEY = "optional, not run (needs GEMINI_API_KEY)"
 
 
 # ------------------------------------------------------------------------------ helpers
@@ -130,68 +131,100 @@ def perplexity_summary(per_item: np.ndarray, n_boot: int, seed: int) -> dict[str
 
 
 # ------------------------------------------------------------------------------ stages
-def run_local_models(cfg: dict[str, Any], prompts: list[dict], stages: set[str]) -> dict:
-    """Base + fine-tuned Gemma: generations and reference perplexity, one model load."""
-    from recipe_gemma.train.lm import load_lm
+def _ppl_item_path(cfg: dict[str, Any], key: str) -> Path:
+    return REPO_ROOT / cfg["out_dir"] / "perplexity" / f"{key}.csv"
 
+
+def _load_ppl_items(path: Path, prompts: list[dict]) -> np.ndarray | None:
+    """Cached per-item (NLL, tokens) for exactly these prompts, else None."""
+    if not path.exists():
+        return None
+    with path.open(encoding="utf-8") as fh:
+        rows = {r["id"]: (float(r["nll_sum"]), float(r["tokens"])) for r in csv.DictReader(fh)}
+    if not all(p["id"] in rows for p in prompts):
+        return None
+    return np.array([rows[p["id"]] for p in prompts])
+
+
+def run_local_models(cfg: dict[str, Any], prompts: list[dict], stages: set[str]) -> dict:
+    """Base / fine-tuned Gemma: generations and reference perplexity (both cached per model).
+
+    The model is loaded only if something is missing; run ``--models base`` and
+    ``--models finetuned`` separately to keep one model in memory at a time."""
     status: dict[str, str] = {}
     wanted = [m for m in ("base", "finetuned") if m in cfg["models"]]
-    if not wanted or not ({"generate", "perplexity"} & stages):
-        return {"status": status, "perplexity": None}
     adapter = REPO_ROOT / cfg["model"]["adapter"]
-    lm = load_lm(cfg["model"])
     ppl_cfg = cfg["perplexity"]
-    per_item: dict[str, np.ndarray] = {}
-    refs_p = [p["prompt"] for p in prompts]
-    refs_r = [p["response"] for p in prompts]
-
+    ids = {p["id"] for p in prompts}
+    lm = None
     for key in wanted:
-        if key == "finetuned":
-            if not adapter.exists():
-                status[key] = f"not run (adapter missing: {cfg['model']['adapter']})"
-                continue
-            lm.load_adapter(adapter)
-        if "generate" in stages:
-            generate_with_lm(
-                lm,
-                prompts,
-                cfg,
-                key,
-                f"{cfg['model']['preset']}"
-                + (f" + LoRA({cfg['model']['adapter']})" if key == "finetuned" else ""),
-            )
-        if "perplexity" in stages:
-            t0 = time.time()
-            per_item[key] = lm.score(
-                refs_p, refs_r, int(ppl_cfg["seq_len"]), int(ppl_cfg["batch_size"])
-            )
-            log.info("%s perplexity done in %.0fs", key, time.time() - t0)
-        status[key] = "ran"
+        if key == "finetuned" and not adapter.exists():
+            status[key] = f"not run (adapter missing: {cfg['model']['adapter']})"
+            continue
+        need_gen = "generate" in stages and not ids <= set(load_cached(gen_path(cfg, key)))
+        need_ppl = (
+            "perplexity" in stages and _load_ppl_items(_ppl_item_path(cfg, key), prompts) is None
+        )
+        if not (need_gen or need_ppl):
+            continue
+        if lm is None or key == "base":  # base must never inherit an adapter
+            from recipe_gemma.train.lm import load_lm
 
-    ppl_out = None
-    if per_item:
-        b = cfg["bootstrap"]
-        ppl_out = {"meta": provenance(cfg, model_preset=cfg["model"]["preset"]), "by_model": {}}
-        for key, arr in per_item.items():
-            entry = {"all": perplexity_summary(arr, b["n"], b["seed"])}
-            for task in ("recipe", "pairing"):
-                mask = np.array([p["task"] == task for p in prompts])
-                if mask.any():
-                    entry[task] = perplexity_summary(arr[mask], b["n"], b["seed"])
-            ppl_out["by_model"][key] = entry
-        ppl_out["by_model"]["gemini"] = {
-            "status": "not comparable: the Gemini API does not expose token log-probabilities "
-            "for scoring arbitrary reference text under the same tokenizer"
-        }
-        out_dir = REPO_ROOT / cfg["out_dir"]
-        write_json(out_dir / "perplexity.json", ppl_out)
-        with (out_dir / "perplexity_items.csv").open("w", newline="", encoding="utf-8") as fh:
-            w = csv.writer(fh)
-            w.writerow(["id", "task", "model", "nll_sum", "tokens"])
-            for key, arr in per_item.items():
+            lm = load_lm(cfg["model"])
+        if key == "finetuned":
+            lm.load_adapter(adapter)
+        if need_gen:
+            model_id = cfg["model"]["preset"] + (
+                f" + LoRA({cfg['model']['adapter']})" if key == "finetuned" else ""
+            )
+            generate_with_lm(lm, prompts, cfg, key, model_id)
+            free_memory()
+        if need_ppl:
+            t0 = time.time()
+            arr = lm.score(
+                [p["prompt"] for p in prompts], [p["response"] for p in prompts],
+                int(ppl_cfg["seq_len"]), int(ppl_cfg["batch_size"]),
+            )  # fmt: skip
+            log.info("%s perplexity done in %.0fs", key, time.time() - t0)
+            path = _ppl_item_path(cfg, key)
+            path.parent.mkdir(parents=True, exist_ok=True)
+            with path.open("w", newline="", encoding="utf-8") as fh:
+                w = csv.writer(fh)
+                w.writerow(["id", "task", "nll_sum", "tokens"])
                 for p, (nll, tok) in zip(prompts, arr, strict=True):
-                    w.writerow([p["id"], p["task"], key, f"{nll:.4f}", int(tok)])
-    return {"status": status, "perplexity": ppl_out}
+                    w.writerow([p["id"], p["task"], f"{nll:.6f}", int(tok)])
+            free_memory()
+        status[key] = "ran"
+    return {"status": status, "perplexity": write_perplexity(cfg, prompts)}
+
+
+def write_perplexity(cfg: dict[str, Any], prompts: list[dict]) -> dict | None:
+    """Aggregate cached per-model perplexity items into perplexity.json (+ CI)."""
+    b = cfg["bootstrap"]
+    by_model: dict[str, Any] = {}
+    for key in ("base", "finetuned"):
+        arr = _load_ppl_items(_ppl_item_path(cfg, key), prompts)
+        if arr is None:
+            continue
+        entry = {"all": perplexity_summary(arr, b["n"], b["seed"])}
+        for task in ("recipe", "pairing"):
+            mask = np.array([p["task"] == task for p in prompts])
+            if mask.any():
+                entry[task] = perplexity_summary(arr[mask], b["n"], b["seed"])
+        by_model[key] = entry
+    if not by_model:
+        return None
+    by_model["gemini"] = {
+        "status": "not comparable: the Gemini API does not expose token log-probabilities "
+        "for scoring arbitrary reference text under the same tokenizer"
+    }
+    out = {
+        "meta": provenance(cfg, model_preset=cfg["model"]["preset"]),
+        "seq_len": int(cfg["perplexity"]["seq_len"]),
+        "by_model": by_model,
+    }
+    write_json(REPO_ROOT / cfg["out_dir"] / "perplexity.json", out)
+    return out
 
 
 def compute_metrics(cfg: dict[str, Any], prompts: list[dict], status: dict[str, str]) -> dict:
@@ -257,7 +290,14 @@ def run_judge(cfg: dict[str, Any], prompts: list[dict], judge_fn: Any = None) ->
             write_json(out_dir / "judge_preference.json", res)
             return res
         if not api_key():
-            res = {**base, "status": NO_KEY, "command": "export GEMINI_API_KEY=... && make eval"}
+            res = {
+                **base,
+                "status": NO_KEY,
+                "command": (
+                    "export GEMINI_API_KEY=... && python -m recipe_gemma.eval "
+                    "--config configs/eval.yaml --stages generate,metrics,judge"
+                ),
+            }
             write_json(out_dir / "judge_preference.json", res)
             return res
         judge_fn = GeminiClient(

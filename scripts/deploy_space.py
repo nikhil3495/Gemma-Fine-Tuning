@@ -71,7 +71,7 @@ def main() -> int:
         if args.dry_run:
             return 0
         if not token:
-            print("HF_TOKEN not set: skipping Space deploy (see docs/BLOCKERS.md).")
+            print("HF_TOKEN not set: skipping Space deploy (optional; unused offline).")
             return 2
         from huggingface_hub import HfApi
 

@@ -51,9 +51,9 @@ print(lm.generate(prompt, max_length=256))
 | Base model | `{preset}` ({total_params:,} params) |
 | Method | LoRA rank {rank} on attention query/value projections; {trainable:,} trainable params ({trainable_pct:.2f}%) |
 | Data | {train_examples:,} train examples ({tasks}); {val_examples} val |
-| Optimizer | AdamW (lr {lr}, wd {wd}, no decay on norms/biases), warmup {warmup} + cosine, grad-clip {clip}, batch {bs}, seq len {seq} |
+| Optimizer | AdamW (lr {lr}, wd {wd}, no decay on norms/biases), warmup {warmup} + cosine, grad-clip {clip}, micro-batch {bs} x grad-accum {accum} (effective {eff}), seq len {seq} |
 | Steps | {steps} (best val loss at step {best_step}){early} |
-| Hardware | {platform}, {sec_per_step} s/step, {minutes:.0f} min total |
+| Hardware | {platform} (CPU only), {sec_per_step} s/optimizer step, {minutes:.0f} min training, peak RSS {peak} GB |
 | Val perplexity | **{ppl_base:.2f} -> {ppl_ft:.2f}** (base -> LoRA, {ppl_n} held-out val examples) |
 | Provenance | git `{sha}`, config hash `{chash}`, {ts} |
 
@@ -69,7 +69,7 @@ Protocol: [docs/EVAL_PROTOCOL.md](https://github.com/nikhil3495/Gemma-Fine-Tunin
   (training data is RecipeNLG-derived, non-commercial terms; flavor data is CC BY-NC-SA 3.0).
 - Not food-safety advice: generated recipes can be wrong about quantities, temperatures, allergens or
   doneness. Always apply common sense.
-- 270M parameters with a short CPU smoke run: outputs are often generic and sometimes incoherent.
+- 270M parameters and a short CPU run: outputs are often generic and sometimes incoherent.
 - The corpus is US-centric, so non-American cuisines are under-represented.
 - Pairing "reasons" imitate templated statistics (co-occurrence, NPMI, shared compounds); the numbers a
   model writes in its reasons are generated text, not looked up.
@@ -98,7 +98,7 @@ def main() -> None:
         status="SMOKE run" if smoke else "full run",
         status_note=(
             "A short CPU fine-tune (proof of the end-to-end pipeline with real numbers), not a "
-            "converged model. The full-run config is `configs/train_full.yaml` (Gemma 3 1B, Kaggle TPU)."
+            "converged model. A larger config (`configs/train_full.yaml`, Gemma 3 1B) needs a GPU."
             if smoke
             else ""
         ),
@@ -120,6 +120,9 @@ def main() -> None:
         warmup=c["warmup_steps"],
         clip=c["grad_clip"],
         bs=c["batch_size"],
+        accum=t.get("grad_accum_steps", 1),
+        eff=t.get("effective_batch", c["batch_size"]),
+        peak=tr.get("memory", {}).get("peak_rss_gb", "n/a"),
         seq=c["seq_len"],
         steps=t["steps_run"],
         best_step=t["best_step"],

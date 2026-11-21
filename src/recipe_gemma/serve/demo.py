@@ -3,8 +3,8 @@
 Modes
 * cached (default, always works): serves REAL generations saved by the benchmark in
   ``results/generations/*.jsonl`` for the closest held-out prompt, with a clear banner.
-* live (``LIVE_MODEL=1``): loads Gemma + the LoRA adapter on CPU and generates on demand;
-  falls back to cached mode if loading fails.
+* live (``LIVE_MODEL=1``): loads one Gemma + the trained LoRA adapter on CPU and generates on
+  demand; falls back to cached mode if loading fails.
 """
 
 from __future__ import annotations
@@ -112,35 +112,33 @@ class Demo:
         return {**best, "overlap": best_score}
 
     def try_load_live(self, preset: str, adapter: str | None) -> bool:
-        """Load base and LoRA Gemma instances for live generation. Returns success."""
+        """Load ONE Gemma instance with the LoRA adapter for live generation (~2 GB RAM).
+
+        Returns success; any failure (missing adapter, no keras_hub, ...) leaves cached mode."""
         try:
+            if not adapter or not Path(adapter).exists():
+                raise FileNotFoundError(f"adapter not found: {adapter} (train first)")
             from recipe_gemma.train.lm import load_lm
 
-            models = {}
-            for key in ("base", "finetuned"):
-                if key == "finetuned" and not adapter:
-                    continue
-                lm = load_lm({"preset": preset})
-                if key == "finetuned":
-                    lm.load_adapter(adapter)
-                lm.set_sampler("top_k", 0.7, 40, 0.95, 1234)
-                models[key] = lm
-            self.live = models
+            lm = load_lm({"preset": preset})
+            lm.load_adapter(adapter)
+            lm.set_sampler("top_k", 0.7, 40, 0.95, 1234)
+            self.live = {"finetuned": lm}
             return True
         except Exception as exc:
             self.live_error = f"{type(exc).__name__}: {exc}"
             log.warning("live model unavailable: %s", self.live_error)
             return False
 
-    def generate_live(self, ingredients: list[str], cuisine: str, which: str) -> str:
-        """Generate with the live model ``which`` in {base, finetuned}."""
+    def generate_live(self, ingredients: list[str], cuisine: str, which: str = "finetuned") -> str:
+        """Generate a recipe with the live fine-tuned model."""
         canon = [self.normalizer.canonical(i) for i in ingredients if i.strip()]
         prompt = chat_prompt(recipe_user_message(canon, cuisine or "any"))
         return self.live[which].generate([prompt], max_length=576)[0]
 
 
 def default_root() -> Path:
-    """Repo root (local) or Space root (deployed); override with RECIPE_GEMMA_ROOT."""
+    """Repo root; override with RECIPE_GEMMA_ROOT."""
     env = os.environ.get("RECIPE_GEMMA_ROOT")
     if env:
         return Path(env)
