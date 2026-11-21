@@ -18,6 +18,7 @@ def main() -> None:
     ap.add_argument("--config", required=True)
     ap.add_argument("--max-steps", type=int, default=None, help="override train.max_steps")
     ap.add_argument("--resume", action="store_true", help="continue from the latest checkpoint")
+    ap.add_argument("--overwrite", action="store_true", help="discard existing checkpoints")
     ap.add_argument(
         "--dry-run",
         action="store_true",
@@ -39,7 +40,7 @@ def main() -> None:
         }
     from recipe_gemma.train.trainer import train
 
-    res = train(cfg, resume=args.resume)
+    res = train(cfg, resume=args.resume, overwrite=args.overwrite or args.dry_run)
     print(
         f"[done] steps={res['training']['steps_run']} peak_rss_gb={res['memory']['peak_rss_gb']} "
         f"val_ppl base={res['val_perplexity']['base']['ppl']:.3f} "

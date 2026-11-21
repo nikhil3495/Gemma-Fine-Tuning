@@ -3,7 +3,7 @@
 [![CI](https://github.com/nikhil3495/Gemma-Fine-Tuning/actions/workflows/ci.yml/badge.svg)](https://github.com/nikhil3495/Gemma-Fine-Tuning/actions/workflows/ci.yml)
 [![License: Apache-2.0](https://img.shields.io/badge/code-Apache--2.0-blue.svg)](LICENSE)
 
-LoRA fine-tuning of **Gemma 3 270M** with **Keras 3 + JAX + keras_hub** on a 30k-recipe corpus, trained and benchmarked entirely **offline on a laptop CPU** (no GPU, no cloud). It covers two tasks:
+LoRA fine-tuning of **Gemma 3 270M** with **Keras 3 + JAX + keras_hub** on a 30k-recipe corpus, trained entirely **offline on a laptop CPU** (no GPU, no cloud). The test-set benchmark has not been run yet. It covers two tasks:
 
 - **Recipe generation:** *"Create a recipe using: chicken, garlic, lemon. Cuisine: Southern European"* -> title, ingredients with quantities, numbered steps, flavor notes.
 - **Flavor pairing:** *"Suggest 5 ingredients that pair well with basil"* -> ranked partners with reasons, grounded in corpus co-occurrence (PMI) and the Ahn et al. (2011) flavor-compound network.
@@ -29,7 +29,7 @@ Full report with plots: [results/report.md](results/report.md). Metric definitio
 
 ## Run locally
 
-Tested on Windows 11 (Python 3.12, CPU only, 16 GB RAM). Training peaked at 3.38 GB RSS (`results/train_smoke.json`).
+Steps 1-2 were run on Windows 11 (Python 3.12, CPU only, 16 GB RAM); step 3 has not been run yet. Training peaked at 3.38 GB RSS (`results/train_smoke.json`). Time and RAM figures in the comments below are estimates except where a results file is cited.
 
 ```bash
 git clone https://github.com/nikhil3495/Gemma-Fine-Tuning && cd Gemma-Fine-Tuning
@@ -39,12 +39,12 @@ pip install -e ".[train,eval,app,dev]" tensorflow-cpu safetensors sentencepiece 
 # 1) data: one parquet shard of the recipe corpus + flavor network -> splits and prompts (~1 min)
 python -m recipe_gemma.data.build --config configs/data.yaml                        # = make data
 
-# 2) train: LoRA on Gemma 3 270M, CPU, ~1 h; checkpoints every 50 steps
+# 2) train: LoRA on Gemma 3 270M, CPU; ~6.6 s/optimizer step (~45 min compute; the committed run took 141 min incl. host stalls); checkpoints every 50 steps
 python -m recipe_gemma.train --config configs/train_smoke.yaml --dry-run           # 5-step memory check
 python -m recipe_gemma.train --config configs/train_smoke.yaml                     # = make train
 python -m recipe_gemma.train --config configs/train_smoke.yaml --resume            # after an interruption
 
-# 3) evaluate: base vs fine-tuned (one model at a time), then report + README table + model card
+# 3) evaluate (needs the adapter from step 2; checkpoints/ is not committed): base vs fine-tuned, one model at a time
 python -m recipe_gemma.eval --config configs/eval.yaml --models base
 python -m recipe_gemma.eval --config configs/eval.yaml --models finetuned
 python -m recipe_gemma.eval --config configs/eval.yaml --stages metrics,judge
@@ -53,7 +53,7 @@ python scripts/make_model_card.py --config configs/train_smoke.yaml --eval-confi
 
 # 4) demo: local Gradio app at http://127.0.0.1:7860
 python app/app.py                      # pairing lookup + cached benchmark generations (after step 3)
-LIVE_MODEL=1 python app/app.py         # live generation with the trained adapter (~2 GB RAM)
+LIVE_MODEL=1 python app/app.py         # live generation; needs the adapter from step 2
 
 python -m pytest && ruff check . && ruff format --check .   # = make test lint
 ```
@@ -96,28 +96,28 @@ flowchart LR
 | `src/recipe_gemma/eval/` | metrics, bootstrap CIs, optional Gemini baseline and pairwise judge, report generator |
 | `app/` | local Gradio demo |
 | `annotation/` | blind A/B human-preference tool + instructions |
-| `results/` | committed metrics, generations, training logs, plots |
+| `results/` | data stats, training results and logs, loss curve, report (benchmark metrics and generations after step 3) |
 | `docs/` | DECISIONS, ENVIRONMENT, DATA_CARD, EVAL_PROTOCOL, FUTURE_WORK |
 
 ## Engineering notes
 
 - **Runs on a Windows CPU laptop.** keras_hub's tf.data tokenization needs `tensorflow-text` (no Windows wheels), so tokenization runs eagerly in Python, training runs on NumPy micro-batches via a seeded `PyDataset`, and keras_hub's `PipelineModel.fit` is bypassed for the plain Keras trainer. The prompt is masked out of the loss.
-- **Memory-safe.** Micro-batch 1 with gradient accumulation 4, seq 256, the XLA platform allocator without preallocation, and caches freed between phases. The first unbounded attempt was killed at step 50 under memory pressure; this setup peaked at 3.38 GB (`results/memory_dryruns.log`, `results/train_smoke.json`).
-- **Interruption-proof.** The LoRA adapter and resumable state are saved every 50 steps; `--resume` restores the data position and LR schedule.
+- **Memory-safe.** Micro-batch 1 with gradient accumulation 4, seq 256, the XLA platform allocator without preallocation, and caches freed between phases. Peak RSS 3.24 GB in the 5-step dry run (`results/memory_dryruns.log`) and 3.38 GB in the full run (`results/train_smoke.json`).
+- **Interruption-proof.** The LoRA adapter, optimizer state and run state are saved every 50 steps; `--resume` restores them and the data position. The committed run was stopped by host memory pressure at about step 230 and resumed from the step-200 checkpoint. That resume predates optimizer-state saving, so Adam moments restarted from zero.
 - **CI without secrets or downloads.** A tiny random pure-Keras causal LM implements the same `CausalLM` interface, so CI exercises training, accumulation, checkpoint/resume, LoRA save/load, scoring, generation and the whole eval runner.
 - **Reproducibility.** Fixed seeds, hash-based splits, cached generations. Every result file records git SHA, config hash, model preset and timestamp. Decisions are logged in [docs/DECISIONS.md](docs/DECISIONS.md).
 
 ## Limitations
 
 - **Small and short:** Gemma 3 **270M**, 400 LoRA steps (effective batch 4) on a laptop CPU. The validation-perplexity gain shows that the model learned the corpus's format and distribution, not that it cooks well. Treat it as a demonstration of the method, not a state-of-the-art recipe model.
-- **Benchmark pending:** the base-vs-fine-tuned test-set evaluation was stopped by host memory pressure before producing results; the commands are in [docs/FUTURE_WORK.md](docs/FUTURE_WORK.md). Until it runs, the recipe tab of the local demo has no cached generations (use `LIVE_MODEL=1`).
+- **Benchmark pending:** the base-vs-fine-tuned test-set evaluation was stopped by host memory pressure before producing results; the commands are in [docs/FUTURE_WORK.md](docs/FUTURE_WORK.md). Until it runs, the recipe tab of the local demo has no cached generations (use `LIVE_MODEL=1` with the adapter from step 2).
 - Gemini baseline and LLM-judge preference are optional and **not run** unless `GEMINI_API_KEY` is set; human preference is **pending annotation** (see [docs/FUTURE_WORK.md](docs/FUTURE_WORK.md)). LLM-judge numbers would be a proxy, never "human preference".
 - Task-B targets and the PMI metric share the same training-corpus statistics (see EVAL_PROTOCOL, "threats to validity").
 - Data is RecipeNLG-derived (non-commercial terms) and US-centric. Generated recipes are not food-safety advice.
 
 ## Optional: scaling up / deployment (not used in this project)
 
-The repo also contains tooling that was **not run** for the results above: `configs/train_full.yaml` (Gemma 3 1B, needs a GPU/TPU) with `notebooks/train_kaggle_tpu.ipynb` / `train_colab.ipynb`; `scripts/push_adapter.py` and `scripts/deploy_space.py` (Hugging Face Hub / Space, need `HF_TOKEN`); and `deploy/vertex/` (guarded Vertex AI scripts that refuse to run without `ALLOW_GCP_SPEND=1`).
+The repo also contains tooling that was **not run** for the results above: `configs/train_full.yaml` (Gemma 3 1B, needs a GPU/TPU) with `notebooks/train_kaggle_tpu.ipynb` / `train_colab.ipynb`; `scripts/push_adapter.py` and `scripts/deploy_space.py` (Hugging Face Hub / Space, need `HF_TOKEN`); and `deploy/vertex/` (guarded Vertex AI scripts that refuse to run without `ALLOW_GCP_SPEND=1`). The notebooks' Colab/Kaggle badges and the annotation tool's `--share` flag belong to this unused tooling.
 
 ## License
 

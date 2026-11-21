@@ -12,7 +12,7 @@ LoRA adapter (`adapter.lora.h5`, keras_hub format) for **google/gemma-3-270m-it*
 on a recipe corpus for two tasks: (A) recipe generation from ingredients + cuisine and (B) flavor-pairing
 suggestions with reasons. Code, data pipeline and benchmark: https://github.com/nikhil3495/Gemma-Fine-Tuning
 
-> **Status: SMOKE run.** A short CPU fine-tune (proof of the end-to-end pipeline with real numbers), not a converged model. A larger config (`configs/train_full.yaml`, Gemma 3 1B) needs a GPU.
+> **Status: SMOKE run.** A short CPU fine-tune (proof of the end-to-end pipeline with real numbers), not a converged model. A larger config (`configs/train_full.yaml`, Gemma 3 1B) needs a GPU. Local, offline artifact: not published to any model hub. Weights were obtained from `hf://unsloth/gemma-3-270m-it` (an ungated copy of the base model above).
 
 ## Usage
 
@@ -41,12 +41,12 @@ print(lm.generate(prompt, max_length=256))
 | Optimizer | AdamW (lr 0.0002, wd 0.01, no decay on norms/biases), warmup 20 + cosine, grad-clip 1.0, micro-batch 1 x grad-accum 4 (effective 4), seq len 256 |
 | Steps | 400 (best val loss at step 400) |
 | Hardware | Windows-11-10.0.26300-SP0 (CPU only), 21.2 s/optimizer step, 141 min training, peak RSS 3.38 GB |
-| Val perplexity | **30.80 -> 4.21** (base -> LoRA, 48 held-out val examples) |
+| Val perplexity | **30.80 -> 4.21** (base -> LoRA, 48 held-out val examples; the same set selected the best checkpoint) |
 | Provenance | git `5c3df23-dirty`, config hash `f8e68ee8279a`, 2026-11-21T17:25:34+00:00 |
 
 ## Evaluation
 
-**Benchmark (base vs fine-tuned generations, perplexity, pairing/structure validity) not yet run.** Run one model at a time: `python -m recipe_gemma.eval --config C:/Users/nikhil/Gemma-Fine-Tuning/configs/eval.yaml --models base`, then `--models finetuned`, then `--stages metrics,judge`, then this report.
+**Benchmark (base vs fine-tuned generations, perplexity, pairing/structure validity) not yet run.** Run one model at a time: `python -m recipe_gemma.eval --config configs/eval.yaml --models base`, then `--models finetuned`, then `--stages metrics,judge`, then this report.
 
 Protocol: [docs/EVAL_PROTOCOL.md](https://github.com/nikhil3495/Gemma-Fine-Tuning/blob/main/docs/EVAL_PROTOCOL.md).
 

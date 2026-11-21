@@ -7,7 +7,8 @@ python -m recipe_gemma.train --config configs/train_smoke.yaml [--resume] [--dry
 * Every ``eval_every`` optimizer steps: validation, LoRA-adapter checkpoint
   (``<out>/ckpt/step_NNNNN``), best-adapter copy (``<out>/ckpt/best``) and ``state.json``.
   ``--resume`` restarts from the latest checkpoint (data-stream position and LR schedule are
-  restored; Adam moment estimates restart from zero).
+  restored, and the optimizer state is reloaded when the checkpoint has it). EarlyStopping
+  patience restarts on resume.
 """
 
 from __future__ import annotations
@@ -134,6 +135,8 @@ class Checkpointer(keras.callbacks.Callback):
         if step_dir.exists():
             shutil.rmtree(step_dir)
         self.lm.save_adapter(step_dir)
+        opt_vars = self.model.optimizer.variables
+        np.savez(step_dir / "optimizer.npz", *[np.asarray(v) for v in opt_vars])
         hist = self.state.setdefault("history", {})
         for k, v in logs.items():
             hist.setdefault(k, []).append(float(v))
@@ -203,7 +206,7 @@ def _adapter_file(d: Path) -> Path:
     return next(p for p in sorted(d.iterdir()) if p.name.startswith("adapter.lora."))
 
 
-def train(cfg: dict[str, Any], resume: bool = False) -> dict[str, Any]:
+def train(cfg: dict[str, Any], resume: bool = False, overwrite: bool = False) -> dict[str, Any]:
     """Run (or resume) LoRA fine-tuning; returns (and writes) the training results record."""
     seed = int(cfg["seed"])
     set_seed(seed)
@@ -220,7 +223,12 @@ def train(cfg: dict[str, Any], resume: bool = False) -> dict[str, Any]:
         if state.get("config_hash") != config_hash(_resume_key(cfg)):
             log.warning("config changed since the checkpoint (memory settings may differ)")
         log.info("resuming from %s (step %s)", state.get("latest"), state.get("step"))
-    elif ckpt_dir.exists():  # fresh run: clear stale checkpoints
+    elif state_path.exists() and not overwrite:
+        raise FileExistsError(
+            f"{ckpt_dir} holds checkpoints (step {json.loads(state_path.read_text())['step']}); "
+            "pass --resume to continue or --overwrite to start over"
+        )
+    elif ckpt_dir.exists():  # explicit --overwrite (or no state): start fresh
         shutil.rmtree(ckpt_dir)
         ckpt_dir.mkdir(parents=True)
     start_step = int(state.get("step", 0))
@@ -298,7 +306,14 @@ def train(cfg: dict[str, Any], resume: bool = False) -> dict[str, Any]:
     )
     if start_step:
         optimizer.build(model.trainable_variables)
-        optimizer._iterations.assign(start_step * accum)  # restore LR-schedule position
+        opt_file = ckpt_dir / state["latest"] / "optimizer.npz"
+        if opt_file.exists():  # full optimizer state: Adam moments + iteration counter
+            saved = np.load(opt_file)
+            for i, var in enumerate(optimizer.variables):
+                var.assign(saved[f"arr_{i}"])
+        else:  # older adapter-only checkpoint: restore the LR-schedule position only
+            log.warning("no optimizer state in checkpoint; Adam moments restart from zero")
+            optimizer._iterations.assign(start_step * accum)
 
     log_csv = REPO_ROOT / cfg["out"]["log_csv"]
     log_csv.parent.mkdir(parents=True, exist_ok=True)

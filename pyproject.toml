@@ -4,8 +4,8 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "recipe-gemma"
-version = "1.0.0"
-description = "LoRA fine-tuning of Gemma (Keras 3 + JAX) for recipe and flavor-pairing generation, benchmarked against base Gemma and zero-shot Gemini."
+version = "0.1.0"
+description = "LoRA fine-tuning of Gemma (Keras 3 + JAX) for recipe and flavor-pairing generation, with an evaluation harness for base vs fine-tuned Gemma (optional zero-shot Gemini)."
 readme = "README.md"
 license = { text = "Apache-2.0" }
 requires-python = ">=3.12,<3.14"
@@ -42,9 +42,6 @@ dev = [
   "psutil>=5.9",
   "ruff>=0.6",
 ]
-
-[project.scripts]
-recipe-gemma = "recipe_gemma.cli:main"
 
 [tool.setuptools.packages.find]
 where = ["src"]

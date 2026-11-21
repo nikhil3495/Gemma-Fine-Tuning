@@ -37,9 +37,11 @@ format:
 	$(PY) -m ruff format .
 	$(PY) -m ruff check --fix .
 
+# optional, unused (offline scope)
 push-model:
 	$(PY) scripts/push_adapter.py --config configs/train_$(CONFIG).yaml
 
+# optional, unused (offline scope)
 deploy-space:
 	$(PY) scripts/deploy_space.py
 

@@ -1,6 +1,6 @@
 # Evaluation protocol
 
-Code: `src/recipe_gemma/eval/`. Run: `python -m recipe_gemma.eval --config configs/eval.yaml && python -m recipe_gemma.eval.report --config configs/eval.yaml` (or `make eval`).
+Code: `src/recipe_gemma/eval/`. Run one model at a time: `python -m recipe_gemma.eval --config configs/eval.yaml --models base`, then `--models finetuned`, then `--stages metrics,judge`, then `python -m recipe_gemma.eval.report --config configs/eval.yaml`.
 
 ## Systems
 
@@ -12,7 +12,7 @@ Code: `src/recipe_gemma/eval/`. Run: `python -m recipe_gemma.eval --config confi
 
 ## Prompts
 
-A fixed set of held-out test prompts (`data/artifacts/eval_prompts.jsonl`), ordered by a seeded hash: the first `n_per_task` of each task. Smoke uses 25 recipe + 25 pairing = **50**. Full uses 100 recipe + 72 pairing = **172**, because only 72 held-out anchors have >= 5 reference partners. Test recipes and test anchors never appear in training data or in the PMI statistics.
+A fixed set of held-out test prompts (`data/artifacts/eval_prompts.jsonl`), ordered by a seeded hash: the first `n_per_task` of each task. Smoke uses 25 recipe + 25 pairing = **50**. Full uses 100 recipe + 72 pairing = **172**, because only 72 held-out anchors have >= 5 reference partners. Test recipes never appear in training data or in the PMI statistics. Test anchors never appear as Task-B training prompts, but by design their PMI statistics and reference partners come from training-split recipes (an anchor needs >= 10 training recipes to qualify).
 
 ## Decoding (identical for all systems)
 

@@ -77,13 +77,16 @@ def generate_with_lm(
     dec = cfg["decoding"]
     path = gen_path(cfg, model_key)
     cache = load_cached(path)
-    lm.set_sampler(dec["sampler"], dec["temperature"], dec["k"], dec["p"], dec["seed"])
     todo = [p for p in prompts if p["id"] not in cache]
     bs = int(dec["batch_size"])
     for task in ("recipe", "pairing"):
         items = [p for p in todo if p["task"] == task]
         for i in range(0, len(items), bs):
             batch = items[i : i + bs]
+            # Seed per batch (keyed by task + eval rank) so outputs don't depend on what was
+            # already cached when an interrupted eval is resumed.
+            seed = int(dec["seed"]) + 1000 * (task == "pairing") + int(batch[0]["eval_rank"])
+            lm.set_sampler(dec["sampler"], dec["temperature"], dec["k"], dec["p"], seed)
             t0 = time.time()
             outs = lm.generate([p["prompt"] for p in batch], int(dec["max_length"][task]))
             sec = (time.time() - t0) / len(batch)

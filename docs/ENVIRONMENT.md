@@ -29,11 +29,11 @@ The machine this repo was built and smoke-trained on. Credentials are recorded a
 |---|---|
 | keras_hub Kaggle preset `gemma3_instruct_270m` | not attempted to download: needs Kaggle creds (absent) |
 | HF `google/gemma-3-270m-it` | gated (`manual`), needs HF_TOKEN plus license acceptance (absent) |
-| HF `unsloth/gemma-3-270m-it` via `keras_hub ... from_preset("hf://unsloth/gemma-3-270m-it")` | **works without credentials** (ungated redistribution under the Gemma license). Loaded 268.1M params in 12 s on CPU (recon probe, not logged) |
+| HF `unsloth/gemma-3-270m-it` via `keras_hub ... from_preset("hf://unsloth/gemma-3-270m-it")` | **works without credentials** (ungated redistribution under the Gemma license). Loaded 268.6M params in 12 s on CPU (recon probe; param count from `results/train_smoke.json`) |
 
 ## CPU throughput (Gemma 3 270M IT, LoRA r=8, JAX CPU)
 
-- From a manual recon probe (console output, not logged to `results/`): 268.1M params; LoRA r=8 -> 534,528 trainable (0.2%); a short batch-4 x seq-256 probe ran ~4-5 s/step; `generate()` batch 4 to 256 tokens ~17 s. These are logged to `results/train_smoke.json` once a smoke run completes.
-- Logged smoke run (`results/train_smoke_partial.json`): **~9 s/step** at batch 4 x seq 320, wall-clock including JIT compile.
+- Params (logged in `results/train_smoke.json`): 268,632,704 total; LoRA r=8 -> 534,528 trainable (0.20%).
+- Logged smoke run (`results/smoke_train_attempt1.log`): ~6.6 s per optimizer step at micro-batch 1 x accum 4, seq 256.
 
 Library versions were looked up on PyPI on 2026-11-21: keras 3.15.1, keras-hub 0.33.0, jax 0.12.1, gradio 6.32.0, google-genai 3.6.1.

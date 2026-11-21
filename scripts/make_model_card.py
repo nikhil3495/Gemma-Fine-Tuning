@@ -30,7 +30,7 @@ LoRA adapter (`{adapter_file}`, keras_hub format) for **{base_model}** (`{preset
 on a recipe corpus for two tasks: (A) recipe generation from ingredients + cuisine and (B) flavor-pairing
 suggestions with reasons. Code, data pipeline and benchmark: https://github.com/nikhil3495/Gemma-Fine-Tuning
 
-> **Status: {status}.** {status_note}
+> **Status: {status}.** {status_note} Local, offline artifact: not published to any model hub. Weights were obtained from `{preset}` (an ungated copy of the base model above).
 
 ## Usage
 
@@ -59,7 +59,7 @@ print(lm.generate(prompt, max_length=256))
 | Optimizer | AdamW (lr {lr}, wd {wd}, no decay on norms/biases), warmup {warmup} + cosine, grad-clip {clip}, micro-batch {bs} x grad-accum {accum} (effective {eff}), seq len {seq} |
 | Steps | {steps} (best val loss at step {best_step}){early} |
 | Hardware | {platform} (CPU only), {sec_per_step} s/optimizer step, {minutes:.0f} min training, peak RSS {peak} GB |
-| Val perplexity | **{ppl_base:.2f} -> {ppl_ft:.2f}** (base -> LoRA, {ppl_n} held-out val examples) |
+| Val perplexity | **{ppl_base:.2f} -> {ppl_ft:.2f}** (base -> LoRA, {ppl_n} held-out val examples; the same set selected the best checkpoint) |
 | Provenance | git `{sha}`, config hash `{chash}`, {ts} |
 
 ## Evaluation

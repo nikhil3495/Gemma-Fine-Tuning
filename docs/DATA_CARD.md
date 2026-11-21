@@ -7,7 +7,7 @@ All counts below come from `results/data_stats.json` (written by `python -m reci
 | Source | What we use | License / terms | Redistributed here? |
 |---|---|---|---|
 | [`corbt/all-recipes`](https://huggingface.co/datasets/corbt/all-recipes) (HF, ungated parquet; 2.15M recipes) | Shard `train-00000-of-00004` (536,812 rows); 150k scanned, 30k sampled | The card states no license. Text and rows match **RecipeNLG** (Bień et al., INLG 2020), whose terms allow **non-commercial research and educational use only**. We treat it under those terms. | No raw data. Only held-out prompts/references (`data/artifacts/eval_prompts.jsonl`), plus model generations once the benchmark runs |
-| Ahn, Ahnert, Bagrow & Barabási (2011), *Flavor network and the principles of food pairing*, Sci. Rep. 1:196, doi:10.1038/srep00196: supplementary `srep00196-s2.csv` (ingredient pairs + #shared flavor compounds) and `srep00196-s3.csv` (56,498 cuisine-labelled recipes) | Flavor graph (1,509 ingredient nodes, 221,777 weighted edges), cuisine tagger | **CC BY-NC-SA 3.0** | Yes: compiled graph `data/artifacts/flavor_graph.json.gz` (attribution here; same license applies to that file) |
+| Ahn, Ahnert, Bagrow & Barabási (2011), *Flavor network and the principles of food pairing*, Sci. Rep. 1:196, doi:10.1038/srep00196: supplementary `srep00196-s2.csv` (ingredient pairs + #shared flavor compounds) and `srep00196-s3.csv` (56,498 cuisine-labelled recipes, counted from the downloaded file) | Flavor graph (1,509 ingredient nodes, 221,777 weighted edges), cuisine tagger | **CC BY-NC-SA 3.0** | Yes: compiled graph `data/artifacts/flavor_graph.json.gz` (attribution here; same license applies to that file) |
 | Gemma 3 weights (`unsloth/gemma-3-270m-it`, an ungated mirror of `google/gemma-3-270m-it`) | Base model | **Gemma Terms of Use** + Prohibited Use Policy | No base weights. Only the LoRA adapter (a derivative, distributed under the same terms) |
 
 Consequence: this project, its adapter and its demo are **non-commercial research/portfolio artifacts**.
@@ -41,7 +41,7 @@ Consequence: this project, its adapter and its demo are **non-commercial researc
 | val | 1,408 | 16 |
 | test (held-out eval prompts) | 100 used (of 1,435) | 72 (all test anchors with >= 5 partners) |
 
-The smoke profile then drops examples longer than 320 tokens (174 of 2,000). See `results/train_smoke_partial.json`.
+The smoke trainer then drops examples longer than 256 tokens (604 of 2,000 train, 36 of 100 val), leaving 1,396 train (996 recipe + 400 pairing) and 48 val examples after the val cap. See `results/train_smoke.json`.
 
 ## Known issues
 

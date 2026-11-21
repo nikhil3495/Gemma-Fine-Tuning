@@ -46,6 +46,15 @@ def _cell(metrics: dict, status: dict, model: str, task: str, key: str) -> str:
     return _pct(metrics[model].get(task, {}).get(key))
 
 
+def _relcfg(cfg: dict[str, Any]) -> str:
+    """Config path relative to the repo (never an absolute, user-specific path)."""
+    p = Path(cfg.get("_config_path", "configs/eval.yaml"))
+    try:
+        return p.resolve().relative_to(REPO_ROOT).as_posix()
+    except ValueError:
+        return p.as_posix()
+
+
 def results_table(res_dir: Path, cfg: dict[str, Any]) -> str:
     """Markdown headline table (rows = metrics, columns = models)."""
     ev = _load(res_dir / "eval_metrics.json")
@@ -56,7 +65,7 @@ def results_table(res_dir: Path, cfg: dict[str, Any]) -> str:
         return (
             "**Benchmark (base vs fine-tuned generations, perplexity, pairing/structure validity) "
             "not yet run.** Run one model at a time: "
-            f"`python -m recipe_gemma.eval --config {cfg.get('_config_path')} --models base`, then "
+            f"`python -m recipe_gemma.eval --config {_relcfg(cfg)} --models base`, then "
             "`--models finetuned`, then `--stages metrics,judge`, then this report."
         )
     m, st = ev["metrics"], ev.get("status", {})

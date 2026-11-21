@@ -121,6 +121,9 @@ def test_checkpoints_and_resume(tmp_path: Path) -> None:
     assert (ckpt / "step_00002" / "adapter.lora.npz").exists() and (ckpt / "best").exists()
     state = json.loads((ckpt / "state.json").read_text(encoding="utf-8"))
     assert state["step"] == 2 and state["latest"] == "step_00002"
+    assert (ckpt / "step_00002" / "optimizer.npz").exists()  # Adam moments + iterations
+    with pytest.raises(FileExistsError):  # never silently wipe checkpoints
+        train(_tiny_cfg(tmp_path, max_steps=4))
 
     res = train(_tiny_cfg(tmp_path, max_steps=4), resume=True)
     assert res["training"]["resumed_from_step"] == 2
