@@ -16,6 +16,7 @@ from __future__ import annotations
 
 import json
 import os
+import types
 from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Any
@@ -124,11 +125,25 @@ class GemmaLM(CausalLM):
         return self.lm
 
     def _detach(self) -> None:
-        """Run the Keras model on token arrays (no in-graph preprocessing)."""
+        """Run as a plain Keras model on token arrays.
+
+        keras_hub's ``PipelineModel`` overrides ``fit``/``evaluate``/``predict`` to rebuild a
+        grain/tf.data preprocessing pipeline, which rejects ``PyDataset`` inputs (and needs
+        tensorflow-text). We bind the backend trainer's plain methods onto the instance, so
+        internal ``self.evaluate`` calls made by ``fit`` use them too."""
         self.lm.preprocessor = None
+        for name in ("fit", "evaluate", "predict"):
+            base = next(
+                c
+                for c in type(self.lm).__mro__
+                if c.__module__.startswith("keras.src") and name in c.__dict__
+            )
+            setattr(self.lm, name, types.MethodType(base.__dict__[name], self.lm))
 
     def _attach(self) -> None:
         self.lm.preprocessor = self._pre
+        for name in ("fit", "evaluate", "predict"):
+            self.lm.__dict__.pop(name, None)
 
     def encode(self, prompts: list[str], responses: list[str], seq_len: int) -> Arrays:
         self._pre.sequence_length = seq_len

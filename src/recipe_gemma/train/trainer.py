@@ -213,7 +213,7 @@ def train(cfg: dict[str, Any]) -> dict[str, Any]:
     ]
     if cfg["out"].get("tensorboard"):
         try:
-            import tensorflow  # noqa: F401  (Keras' TensorBoard callback writes via TF)
+            import tensorboard  # noqa: F401  (needed by the Keras TensorBoard callback)
 
             callbacks.append(
                 keras.callbacks.TensorBoard(str(REPO_ROOT / cfg["out"]["tensorboard"]))
