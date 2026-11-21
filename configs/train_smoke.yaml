@@ -1,0 +1,44 @@
+# REAL smoke fine-tune on CPU: Gemma 3 270M IT + LoRA r=8, ~2k examples, a few hundred steps.
+# python -m recipe_gemma.train --config configs/train_smoke.yaml
+run_name: smoke
+seed: 1234
+
+data:
+  profile: smoke
+  train: data/processed/smoke/train.jsonl
+  val: data/processed/smoke/val.jsonl
+  drop_overlength: true     # keep only examples whose full target fits in seq_len
+  max_val: 64
+
+model:
+  # Ungated redistribution of google/gemma-3-270m-it (Gemma Terms of Use). With Kaggle creds,
+  # the equivalent official preset is `gemma3_instruct_270m`.
+  preset: hf://unsloth/gemma-3-270m-it
+  dtype: null               # float32 on CPU (bf16 matmuls are slower on this CPU)
+
+lora:
+  rank: 8
+
+train:
+  seq_len: 320
+  batch_size: 4
+  max_steps: 400
+  eval_every: 50
+  log_every: 10
+  lr: 2.0e-4
+  warmup_steps: 20
+  min_lr_ratio: 0.1
+  weight_decay: 0.01
+  grad_clip: 1.0
+  early_stopping_patience: 2
+  eval_batch_size: 2
+  mixed_precision: null
+
+out:
+  dir: checkpoints/smoke
+  results: results/train_smoke.json
+  log_csv: results/train_smoke_log.csv
+  tensorboard: runs/smoke
+
+hub:
+  repo_id: nikhil3495/gemma-recipe-lora

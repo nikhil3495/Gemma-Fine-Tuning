@@ -1,0 +1,35 @@
+# Full run (Kaggle TPU v5e-8 / Colab or Kaggle GPU). Gemma 3 1B IT + LoRA r=16, seq 512.
+# python -m recipe_gemma.train --config configs/train_full.yaml
+extends: train_smoke.yaml
+run_name: full
+
+data:
+  profile: full
+  train: data/processed/full/train.jsonl
+  val: data/processed/full/val.jsonl
+  max_val: 500
+
+model:
+  preset: gemma3_instruct_1b      # Kaggle preset (needs KAGGLE_USERNAME/KAGGLE_KEY + accepted license)
+  dtype: bfloat16
+
+lora:
+  rank: 16
+
+train:
+  seq_len: 512
+  batch_size: 16
+  max_steps: 3000
+  eval_every: 200
+  log_every: 20
+  lr: 2.0e-4
+  warmup_steps: 100
+  early_stopping_patience: 3
+  eval_batch_size: 8
+  mixed_precision: mixed_bfloat16
+
+out:
+  dir: checkpoints/full
+  results: results/train_full.json
+  log_csv: results/train_full_log.csv
+  tensorboard: runs/full

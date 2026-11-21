@@ -1,0 +1,29 @@
+# CI-only: tiny random Keras causal LM, same code path, no downloads.
+extends: train_smoke.yaml
+run_name: tiny
+
+data:
+  train: tests/fixtures/train.jsonl
+  val: tests/fixtures/val.jsonl
+  max_val: 4
+
+model:
+  preset: tiny-random
+
+lora:
+  rank: 2
+
+train:
+  seq_len: 448
+  batch_size: 2
+  max_steps: 4
+  eval_every: 2
+  log_every: 1
+  warmup_steps: 1
+  eval_batch_size: 2
+
+out:
+  dir: checkpoints/tiny
+  results: checkpoints/tiny/train_tiny.json
+  log_csv: checkpoints/tiny/train_tiny_log.csv
+  tensorboard: null
