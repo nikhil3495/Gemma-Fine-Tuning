@@ -26,7 +26,7 @@ sdk: gradio
 app_file: app.py
 pinned: false
 license: apache-2.0
-short_description: LoRA fine-tuned Gemma for recipes & flavor pairing
+short_description: Gemma LoRA recipe & flavor-pairing demo
 ---
 
 Demo for https://github.com/nikhil3495/Gemma-Fine-Tuning. Pairings use corpus PMI and the
@@ -35,7 +35,7 @@ Ahn et al. (2011) flavor network (CC BY-NC-SA 3.0). Model outputs come from Gemm
 """
 
 
-def stage(out: Path) -> Path:
+def stage(out: Path, generations: Path | None = None, adapter: Path | None = None) -> Path:
     """Copy the files the Space needs into ``out``."""
     shutil.copy(ROOT / "app" / "app.py", out / "app.py")
     shutil.copy(ROOT / "app" / "requirements.txt", out / "requirements.txt")
@@ -45,7 +45,10 @@ def stage(out: Path) -> Path:
     (out / "data" / "artifacts").mkdir(parents=True)
     for f in ("flavor_graph.json.gz", "cooccur_train.json.gz"):
         shutil.copy(ROOT / "data" / "artifacts" / f, out / "data" / "artifacts" / f)
-    gen = ROOT / "results" / "generations"
+    if adapter is not None and adapter.exists():  # enables LIVE_MODEL=1 on the Space
+        (out / "adapter").mkdir()
+        shutil.copy(adapter, out / "adapter" / adapter.name)
+    gen = generations or ROOT / "results" / "generations"
     if gen.exists():
         shutil.copytree(gen, out / "results" / "generations")
     return out
@@ -56,11 +59,13 @@ def main() -> int:
     ap = argparse.ArgumentParser(description=__doc__)
     ap.add_argument("--space", default="nikhil3495/gemma-recipe-pairing")
     ap.add_argument("--dry-run", action="store_true")
+    ap.add_argument("--generations-dir", default="results/generations")
+    ap.add_argument("--adapter", default="checkpoints/smoke/adapter.lora.h5")
     ap.add_argument("--timeout", type=int, default=900)
     args = ap.parse_args()
     token = os.environ.get("HF_TOKEN")
     with tempfile.TemporaryDirectory() as tmp:
-        staged = stage(Path(tmp))
+        staged = stage(Path(tmp), ROOT / args.generations_dir, ROOT / args.adapter)
         files = sorted(str(p.relative_to(staged)) for p in staged.rglob("*") if p.is_file())
         print(f"staged {len(files)} files")
         if args.dry_run:

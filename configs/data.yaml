@@ -3,7 +3,7 @@ seed: 1234
 
 recipes:
   hf_dataset: corbt/all-recipes
-  # Only one parquet shard is needed for a 30k sample (~340k rows); avoids an 800 MB download.
+  # Only one parquet shard is needed for a 30k sample (536,812 rows); avoids an 800 MB download.
   shard_file: data/train-00000-of-00004-237b1b1141fdcfa1.parquet
   text_column: input
   max_rows_scan: 150000

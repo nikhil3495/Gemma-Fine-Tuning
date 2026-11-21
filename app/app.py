@@ -28,7 +28,22 @@ ROOT = Path(
 DEMO = Demo(ROOT)
 LIVE = os.environ.get("LIVE_MODEL") == "1" and DEMO.try_load_live(
     os.environ.get("MODEL_PRESET", "hf://unsloth/gemma-3-270m-it"),
-    os.environ.get("ADAPTER_PATH", str(ROOT / "adapter" / "adapter.lora.h5")),
+    os.environ.get(
+        "ADAPTER_PATH",
+        str(
+            next(
+                (
+                    p
+                    for p in (
+                        ROOT / "adapter" / "adapter.lora.h5",
+                        ROOT / "checkpoints" / "smoke" / "adapter.lora.h5",
+                    )
+                    if p.exists()
+                ),
+                ROOT / "checkpoints" / "smoke" / "adapter.lora.h5",
+            )
+        ),
+    ),
 )
 CUISINES = ["any", "North American", "Southern European", "Latin American", "East Asian",
             "South Asian", "Southeast Asian", "Middle Eastern", "Western European",
@@ -71,8 +86,9 @@ def pairing_fn(ingredient: str) -> tuple[str, list[list], str, str]:
 with gr.Blocks(title="Gemma Recipe & Flavor Pairing") as demo:
     gr.Markdown(
         "# Gemma recipe & flavor-pairing demo\n"
-        "LoRA fine-tuned Gemma 3 270M (Keras 3 + JAX) on a recipe corpus. Pairings are grounded "
-        "in corpus PMI and the Ahn et al. (2011) flavor network. "
+        "LoRA fine-tuning of Gemma 3 270M (Keras 3 + JAX) on a recipe corpus. Pairings are "
+        "grounded in corpus PMI and the Ahn et al. (2011) flavor network. Recipe outputs appear "
+        "once the benchmark has produced generations (`make eval`). "
         "[Code & benchmark](https://github.com/nikhil3495/Gemma-Fine-Tuning)"
     )
     with gr.Tab("Generate a recipe"):

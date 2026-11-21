@@ -18,7 +18,7 @@ from recipe_gemma.utils.config import load_config  # noqa: E402
 
 TEMPLATE = """---
 license: gemma
-base_model: google/gemma-3-270m-it
+base_model: {base_model}
 library_name: keras-hub
 tags: [gemma, gemma3, lora, keras, jax, recipes, food, flavor-pairing]
 datasets: [corbt/all-recipes]
@@ -26,7 +26,7 @@ datasets: [corbt/all-recipes]
 
 # gemma-recipe-lora: LoRA adapter for recipe & flavor-pairing generation
 
-LoRA adapter (`{adapter_file}`, keras_hub format) for **Gemma 3 270M IT**, fine-tuned with Keras 3 + JAX
+LoRA adapter (`{adapter_file}`, keras_hub format) for **{base_model}** (`{preset}`), fine-tuned with Keras 3 + JAX
 on a recipe corpus for two tasks: (A) recipe generation from ingredients + cuisine and (B) flavor-pairing
 suggestions with reasons. Code, data pipeline and benchmark: https://github.com/nikhil3495/Gemma-Fine-Tuning
 
@@ -103,6 +103,11 @@ def main() -> None:
             else ""
         ),
         preset=m["preset"],
+        base_model={
+            "hf://unsloth/gemma-3-270m-it": "google/gemma-3-270m-it",
+            "gemma3_instruct_270m": "google/gemma-3-270m-it",
+            "gemma3_instruct_1b": "google/gemma-3-1b-it",
+        }.get(m["preset"], m["preset"]),
         total_params=m["total_params"],
         rank=m["lora_rank"],
         trainable=m["trainable_params"],

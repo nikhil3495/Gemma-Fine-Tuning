@@ -235,7 +235,8 @@ def build(cfg: dict) -> dict[str, Any]:
         # Task B has far fewer unique examples (one per anchor ingredient); oversample it
         # with replacement so it makes up `pairing_frac` of the training mix.
         n_pair = round(n_train * pcfg.get("pairing_frac", 0.0))
-        pair_pool = examples["train"]["pairing"]
+        pair_pool = list(examples["train"]["pairing"])  # sorted by anchor -> shuffle first
+        prng.shuffle(pair_pool)
         pairs = [pair_pool[i % len(pair_pool)] for i in range(n_pair)] if pair_pool else []
         tr = rec_tr[: n_train - len(pairs)] + pairs
         prng.shuffle(tr)

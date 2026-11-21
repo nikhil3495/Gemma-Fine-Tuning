@@ -10,6 +10,12 @@ service-account*.json
 application_default_credentials.json
 .huggingface/
 hf_token*
+client_secret*.json
+*-key.json
+gcp-*.json
+*.p12
+.netrc
+annotation/data/
 
 # --- python ---
 __pycache__/

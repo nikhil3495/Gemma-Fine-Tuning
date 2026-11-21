@@ -28,6 +28,9 @@ train:
   eval_batch_size: 8
   mixed_precision: mixed_bfloat16
 
+hub:
+  repo_id: nikhil3495/gemma-recipe-lora-1b
+
 out:
   dir: checkpoints/full
   results: results/train_full.json
