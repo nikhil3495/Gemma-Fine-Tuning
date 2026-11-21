@@ -1,0 +1,12 @@
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-21 19:35:41,705 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-21 19:35:42,634 INFO Unable to initialize backend 'tpu': UNIMPLEMENTED: LoadPjrtPlugin is not implemented on windows yet.
+2026-11-21 19:35:42,634 INFO Unable to initialize backend 'proxy': The 'proxy' backend requires the address of an IFRT Proxy server. Set it via the JAX_BACKEND_TARGET environment variable or the jax_backend_target config option, e.g. JAX_BACKEND_TARGET=grpc://localhost:29000.
+2026-11-21 19:35:58,463 INFO train=1826 val=56 dropped={'train': 174, 'val': 8}
+2026-11-21 19:37:14,880 INFO base val ppl=31.127
+[train] step=10 loss=3.1871 sec_per_step=9.53
+[train] step=20 loss=2.9180 sec_per_step=9.33
+[train] step=30 loss=2.6594 sec_per_step=9.31
+[train] step=40 loss=2.5115 sec_per_step=9.17
+[train] step=50 loss=2.3782 sec_per_step=8.65
+[eval] step=50 loss=2.3782 val_loss=2.0982

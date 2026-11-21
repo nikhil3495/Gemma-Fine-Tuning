@@ -1,7 +1,7 @@
 {
   "meta": {
-    "git_sha": "2e21dbf-dirty",
-    "timestamp_utc": "2026-11-21T13:50:30+00:00",
+    "git_sha": "34bd5eb-dirty",
+    "timestamp_utc": "2026-11-21T14:26:39+00:00",
     "python": "3.12.14",
     "platform": "Windows-11-10.0.26300-SP0",
     "config_hash": "6678d67eeb2d",
@@ -19,10 +19,10 @@
     "after_dedupe": 61925,
     "sampled": 30000,
     "ingredient_lines": 227197,
-    "ingredient_lines_mapped_to_graph": 161548,
+    "ingredient_lines_mapped_to_graph": 161180,
     "cuisine_counts": {
-      "North American": 18453,
-      "any": 8335,
+      "North American": 18389,
+      "any": 8399,
       "Southern European": 1317,
       "Latin American": 1306,
       "East Asian": 313,

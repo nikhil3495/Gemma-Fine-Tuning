@@ -35,5 +35,6 @@ Top-k sampling, k = 40, temperature 0.7, fixed seed 1234. Max length is 576 tota
 
 - **Target/metric coupling.** Task-B training targets are ranked by the same training-split PMI that `pmi_positive` measures, so the fine-tuned model is optimized toward that metric. `shares_compound` is only partly independent (the ranking includes a small compound bonus). Treat the Task-B PMI gain as "learned the corpus's pairing statistics", not as proof of better taste.
 - The fine-tuned model also learns our output format, which helps `well_formed` and `format_ok` relative to zero-shot systems. That is intended (instruction adherence), but it is not culinary quality.
+- **Judge self-preference.** The default judge is Gemini, which is also a competitor in the `finetuned|gemini` and `gemini|base` pairs; LLMs tend to favour their own outputs. Treat those two pairs with extra caution, or set `judge.model` to a different model family.
 - Smoke-scale evaluation (n = 25 per task) gives wide CIs; compare intervals, not point estimates.
 - Normalizer and parser errors affect all systems, but not necessarily equally (e.g., markdown-heavy outputs).

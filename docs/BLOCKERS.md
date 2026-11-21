@@ -1,12 +1,12 @@
 # Blockers (need the repo owner)
 
-Everything else is built, unit/integration-tested (57 tests, CI green) and pushed. Each item below is something only you can provide. In each case the code path exists and degrades gracefully.
+Everything else is built, unit/integration-tested (61 tests, CI green) and pushed. Each item below is something only you can provide. In each case the code path exists and degrades gracefully.
 
 | # | Blocker | Impact now | What runs once fixed |
 |---|---|---|---|
-| 0 | **Smoke training interrupted at step 50/400.** Claude Code's background-job reaper killed it when the laptop ran critically low on memory (training uses ~7 GB of 15.6 GB). It must not be auto-restarted by the agent | No adapter yet, so no generations, metrics, judge, demo outputs or model card | Run it yourself in a normal terminal (not subject to the reaper), with other apps closed: `python -m recipe_gemma.train --config configs/train_smoke.yaml` (~60 min), then `python -m recipe_gemma.eval --config configs/eval.yaml && python -m recipe_gemma.eval.report --config configs/eval.yaml && python scripts/make_model_card.py` (~40 min). Or start Claude Code with `CLAUDE_CODE_DISABLE_BG_SHELL_PRESSURE_REAP=1` and ask it to resume |
+| 0 | **Smoke training interrupted at step 50/400** by host memory pressure (the process used ~7 GB of 15.6 GB, observed in Task Manager; not logged) | No adapter yet, so no generations, metrics, judge, demo outputs or model card | Rerun it with other apps closed: `python -m recipe_gemma.train --config configs/train_smoke.yaml` (~60 min), then `python -m recipe_gemma.eval --config configs/eval.yaml && python -m recipe_gemma.eval.report --config configs/eval.yaml && python scripts/make_model_card.py` (~40 min). |
 | 1 | **`HF_TOKEN` not available to the build session** (the `export HF_TOKEN=...` in the launch shell never reached it; checked process env, Windows User/Machine env, WSL and `~/.cache/huggingface/token`) | Adapter not pushed to `nikhil3495/gemma-recipe-lora`; **HF Space `nikhil3495/gemma-recipe-pairing` not deployed** | `scripts/push_adapter.py`, `scripts/deploy_space.py` (waits for the build and checks HTTP 200) |
-| 2 | **`GEMINI_API_KEY` absent** | Zero-shot Gemini column and LLM-judge preference show "not run (no API key)". Both are implemented and tested with a mocked client | `python -m recipe_gemma.eval` generates only the missing Gemini outputs (base/fine-tuned are cached), then the judge runs |
+| 2 | **`GEMINI_API_KEY` absent** | Zero-shot Gemini column and LLM-judge preference show "not run (no API key)". Both are implemented and tested with a mocked client | `python -m recipe_gemma.eval --stages generate,metrics,judge` regenerates nothing that is cached (but still loads Gemma once); add `perplexity` to recompute that too |
 | 3 | **No NVIDIA GPU / TPU locally** (Intel Iris Xe) and **no Kaggle credentials** | Only the CPU *smoke* run (Gemma 3 270M, 400 steps) was possible; the full run (Gemma 3 1B, `configs/train_full.yaml`) was not | `notebooks/train_kaggle_tpu.ipynb` or `notebooks/train_colab.ipynb` |
 | 4 | **No human annotators** | Human-preference table: "pending annotation" | `python -m annotation.app` with 2+ people, then `python scripts/score_human_prefs.py` |
 | 5 | **gcloud not authenticated / `ALLOW_GCP_SPEND` unset** | Vertex AI scripts written and guarded, not executed; no GCP resources were created | `deploy/vertex/README.md` |
@@ -33,7 +33,8 @@ python scripts/deploy_space.py
 # 3) Full run on Kaggle TPU / Colab GPU (accept the Gemma license on Kaggle first)
 #    open notebooks/train_kaggle_tpu.ipynb, or locally with a GPU:
 make data && make train CONFIG=full && make eval EVAL_CONFIG=configs/eval_full.yaml \
-  && make push-model CONFIG=full && make deploy-space
+  && make push-model CONFIG=full \
+  && python scripts/deploy_space.py --generations-dir results/full/generations --adapter checkpoints/full/adapter.lora.h5
 
 # 4) Human preference
 python -m annotation.app --generations-dir results/generations   # share the URL with annotators

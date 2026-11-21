@@ -53,6 +53,6 @@
       "val_loss": 2.0982
     }
   ],
-  "source_log": "runs/smoke_train.log",
+  "source_log": "results/smoke_train_partial.log",
   "resume_command": "python -m recipe_gemma.train --config configs/train_smoke.yaml"
 }

@@ -3,7 +3,7 @@
 One line per decision: what was chosen and why. Newest at the bottom.
 
 - **Compute plan = CPU smoke + notebooks for full run.** No NVIDIA GPU (Intel Iris Xe only), so: real LoRA smoke fine-tune locally on CPU + `notebooks/train_kaggle_tpu.ipynb` / `train_colab.ipynb` for the full run.
-- **Base model = Gemma 3 270M instruction-tuned** (smallest Gemma 3 variant in keras_hub presets: `gemma3_instruct_270m`). Feasible on CPU at ~4-5 s/step; full config targets `gemma3_instruct_1b` on TPU/GPU.
+- **Base model = Gemma 3 270M instruction-tuned** (smallest Gemma 3 variant in keras_hub presets: `gemma3_instruct_270m`). Feasible on CPU (~9 s/step logged at seq 320); full config targets `gemma3_instruct_1b` on TPU/GPU.
 - **Weights source = `hf://unsloth/gemma-3-270m-it`** because HF_TOKEN and Kaggle creds are absent and `google/*` Gemma repos are gated. The unsloth repo is an ungated redistribution of the same Gemma 3 weights under the Gemma Terms of Use. Config key `model.preset` switches to the official Kaggle preset when creds exist.
 - **Tokenize eagerly in Python, fit on NumPy arrays.** keras_hub's tf.data path needs `tensorflow-text`, which has no Windows wheels; the pure-Python SentencePiece path works everywhere. It also enables loss masking on the prompt (we train on responses only).
 - **Python 3.12** (jax 0.12 requires >=3.12; system Python is 3.11).
@@ -15,7 +15,7 @@ One line per decision: what was chosen and why. Newest at the bottom.
 - **Only clear aliases onto flavor-graph names** (chocolate->cocoa, molasses->cane_molasses, sausage->pork_sausage, cornstarch->starch). Sugar, salt, water etc. are absent from Ahn's data, so they stay corpus-only and count as "not covered" rather than being force-mapped.
 - **Task-B anchors: >=10 training recipes, partners >=3 co-occurrences, ranked by NPMI + 0.1*log1p(shared compounds)**: gives 551 anchors (458/19/74 train/val/test) vs 359 at stricter thresholds.
 - **Anchor split 80/5/15** (not 90/5/5) so there are enough held-out pairing prompts (72 usable).
-- **Pairing oversampled** to 20% (smoke) / 10% (full) of the training mix: 449 unique anchor examples vs 25k recipes would otherwise be ~2%.
+- **Pairing share fixed** at 20% (smoke: 400 of 449 anchors, seeded shuffle) / 10% (full: 2,536 rows, i.e. ~5.6 passes over 449 anchors); with no reweighting, 449 anchor examples vs 25k recipes would be ~2%.
 - **Full eval = 100 recipe + 72 pairing = 172 prompts** (not 200): only 72 held-out anchors have >=5 reference partners. Smoke = 25 + 25 = 50.
 - **Smoke seq_len 320 with over-length examples dropped** (keeps 89% of recipes, 100% of pairings) so the model always sees complete targets ending in `<end_of_turn>`; 400 steps, batch 4, LoRA r=8, lr 2e-4, float32 (CPU).
 - **Decoding = top-k 40, T=0.7, seed 1234 for every system** (greedy loops badly on a 270M model; identical settings keep the comparison fair).
@@ -23,5 +23,7 @@ One line per decision: what was chosen and why. Newest at the bottom.
 - **Judge ties when the two presentation orders disagree** (cancels position bias); judge temperature 0.
 - **Lint:** E501 ignored only for `eval/report.py` (Markdown template strings); notebooks excluded from ruff.
 - **Annotation agreement measured on the winning model, not on A/B position**, since every annotator sees a different left/right order.
-- **Smoke run interrupted at step 50/400 (host memory pressure), not auto-restarted.** The agent harness forbids restarting a job it reaped for memory. The real progress was recorded with `scripts/collect_partial_train.py` -> `results/train_smoke_partial.json`; README/BLOCKERS say "pending" instead of showing benchmark numbers.
+- **Smoke run interrupted at step 50/400 (host memory pressure); left for the owner to rerun** rather than restarting it on a memory-starved machine. The real progress was recorded with `scripts/collect_partial_train.py` -> `results/train_smoke_partial.json`; README/BLOCKERS say "pending" instead of showing benchmark numbers.
 - **No v1.0.0 tag/release yet:** tagging a release without the benchmark it advertises would be misleading. Tag after the eval completes (`git tag v1.0.0 && gh release create v1.0.0 results/report.md`).
+- **Self-review fixes:** shuffle the pairing pool before subsampling (was alphabetical); aliases for misleading head nouns (marshmallow cream, cream of mushroom soup, ...); separate HF repo for the full-run adapter; data rebuilt.
+- The interrupted 50-step smoke run (results/train_smoke_partial.json) used the dataset built *before* the pairing-shuffle fix; the next full smoke run uses the rebuilt data, so its numbers supersede it.
