@@ -1,0 +1,35 @@
+2026-11-21 20:54:21,354 INFO resuming from step_00200 (step 200)
+2026-11-21 20:54:21,354 INFO available RAM before load: 3.19 GB
+Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-21 20:54:24,852 WARNING Warning: You are sending unauthenticated requests to the HF Hub. Please set a HF_TOKEN to enable higher rate limits and faster downloads.
+2026-11-21 20:54:26,178 INFO Unable to initialize backend 'tpu': UNIMPLEMENTED: LoadPjrtPlugin is not implemented on windows yet.
+2026-11-21 20:54:26,178 INFO Unable to initialize backend 'proxy': The 'proxy' backend requires the address of an IFRT Proxy server. Set it via the JAX_BACKEND_TARGET environment variable or the jax_backend_target config option, e.g. JAX_BACKEND_TARGET=grpc://localhost:29000.
+2026-11-21 20:54:40,247 INFO train=1396 val=48 dropped={'train': 604, 'val': 36}
+2026-11-21 20:54:40,247 INFO base val ppl=30.796 (rss 1.59 GB)
+[train] step=210 loss=1.3405 sec_per_step=6.88 rss_gb=2.94 peak_gb=3.38
+[train] step=220 loss=1.3146 sec_per_step=6.51 rss_gb=2.94 peak_gb=3.38
+[train] step=230 loss=1.3505 sec_per_step=6.40 rss_gb=2.70 peak_gb=3.38
+[train] step=240 loss=1.3673 sec_per_step=6.31 rss_gb=2.50 peak_gb=3.38
+[train] step=250 loss=1.3869 sec_per_step=6.24 rss_gb=2.50 peak_gb=3.38
+[eval] step=250 loss=1.3869 val_loss=1.4668
+[train] step=260 loss=1.1956 sec_per_step=7.61 rss_gb=2.40 peak_gb=3.38
+[train] step=270 loss=1.2278 sec_per_step=8.06 rss_gb=2.41 peak_gb=3.38
+[train] step=280 loss=1.2169 sec_per_step=8.38 rss_gb=2.41 peak_gb=3.38
+[train] step=290 loss=1.2007 sec_per_step=8.62 rss_gb=2.28 peak_gb=3.38
+[train] step=300 loss=1.2014 sec_per_step=59.14 rss_gb=2.28 peak_gb=3.38
+[eval] step=300 loss=1.2014 val_loss=1.4455
+[train] step=310 loss=1.2820 sec_per_step=55.26 rss_gb=2.31 peak_gb=3.38
+[train] step=320 loss=1.2773 sec_per_step=51.52 rss_gb=2.31 peak_gb=3.38
+[train] step=330 loss=1.2388 sec_per_step=48.36 rss_gb=2.31 peak_gb=3.38
+[train] step=340 loss=1.2298 sec_per_step=45.64 rss_gb=2.32 peak_gb=3.38
+[train] step=350 loss=1.2194 sec_per_step=43.30 rss_gb=2.32 peak_gb=3.38
+[eval] step=350 loss=1.2194 val_loss=1.4380
+[train] step=360 loss=1.3685 sec_per_step=41.58 rss_gb=2.32 peak_gb=3.38
+[train] step=370 loss=1.3481 sec_per_step=39.75 rss_gb=2.32 peak_gb=3.38
+[train] step=380 loss=1.3168 sec_per_step=38.11 rss_gb=2.32 peak_gb=3.38
+[train] step=390 loss=1.2753 sec_per_step=36.64 rss_gb=2.32 peak_gb=3.38
+[train] step=400 loss=1.2723 sec_per_step=35.32 rss_gb=2.32 peak_gb=3.38
+[eval] step=400 loss=1.2723 val_loss=1.4345
+2026-11-21 22:55:34,407 INFO fine-tuned val ppl=4.207
+2026-11-21 22:55:34,705 INFO wrote results/train_smoke.json (peak RSS 3.38 GB)
+[done] steps=400 peak_rss_gb=3.38 val_ppl base=30.796 tuned=4.207

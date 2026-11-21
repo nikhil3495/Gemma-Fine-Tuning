@@ -63,7 +63,6 @@ ignore = ["RUF001", "RUF002", "RUF003"]
 # Markdown report templates read more clearly as single long f-strings.
 "src/recipe_gemma/eval/report.py" = ["E501"]
 "scripts/make_model_card.py" = ["E501"]
-"scripts/collect_partial_train.py" = ["E501"]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]

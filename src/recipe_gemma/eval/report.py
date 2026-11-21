@@ -198,7 +198,8 @@ def training_summary(cfg: dict[str, Any]) -> str:
         f"- Run: **{tr['config']['run_name']}** (git `{tr['meta']['git_sha']}`, config hash `{tr['meta']['config_hash']}`, {tr['meta']['timestamp_utc']})",
         f"- Model: `{mdl['preset']}`: {mdl['total_params']:,} params, LoRA rank {mdl['lora_rank']} -> {mdl['trainable_params']:,} trainable ({mdl['trainable_pct']:.2f}%)",
         f"- Data: {d['train_examples']:,} train / {d['val_examples']} val examples ({d['train_tasks']}); dropped for length: {d['dropped_overlength']}",
-        f"- Steps: {t['steps_run']} (best at {t['best_step']}), {t['sec_per_step']} s/step on {tr['meta']['platform']}; total {t['train_seconds'] / 60:.1f} min",
+        f"- Steps: {t['steps_run']} optimizer steps (best val loss at {t['best_step']}), micro-batch {t.get('batch_size', '?')} x grad-accum {t.get('grad_accum_steps', 1)} = effective batch {t.get('effective_batch', '?')}" + (f"; resumed once from the step-{t['resumed_from_step']} checkpoint" if t.get('resumed_from_step') else ""),
+        f"- Compute: CPU only ({tr['meta']['platform']}); {t['train_seconds'] / 60:.0f} min wall-clock ({t['train_seconds'] / max(1, t['steps_run']):.1f} s/step incl. host stalls); peak RSS {tr.get('memory', {}).get('peak_rss_gb', 'n/a')} GB",
         f"- Val loss: best {t['best_val_loss']:.4f}; val perplexity **{vp['base']['ppl']:.2f} (base) -> {vp['fine_tuned']['ppl']:.2f} (LoRA)** on {vp['base']['n']} val examples",
     ])  # fmt: skip
 

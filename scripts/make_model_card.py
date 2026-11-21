@@ -128,7 +128,7 @@ def main() -> None:
         best_step=t["best_step"],
         early=" (early-stopped)" if t["early_stopped"] else "",
         platform=tr["meta"]["platform"],
-        sec_per_step=t["sec_per_step"],
+        sec_per_step=round(t["train_seconds"] / max(1, t["steps_run"]), 1),
         minutes=t["train_seconds"] / 60,
         ppl_base=tr["val_perplexity"]["base"]["ppl"],
         ppl_ft=tr["val_perplexity"]["fine_tuned"]["ppl"],

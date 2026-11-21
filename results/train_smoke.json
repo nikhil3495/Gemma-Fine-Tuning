@@ -1,0 +1,169 @@
+{
+  "meta": {
+    "git_sha": "5c3df23-dirty",
+    "timestamp_utc": "2026-11-21T17:25:34+00:00",
+    "python": "3.12.14",
+    "platform": "Windows-11-10.0.26300-SP0",
+    "config_hash": "f8e68ee8279a",
+    "config_path": "configs/train_smoke.yaml",
+    "model_preset": "hf://unsloth/gemma-3-270m-it",
+    "run_name": "smoke"
+  },
+  "config": {
+    "run_name": "smoke",
+    "seed": 1234,
+    "data": {
+      "profile": "smoke",
+      "train": "data/processed/smoke/train.jsonl",
+      "val": "data/processed/smoke/val.jsonl",
+      "drop_overlength": true,
+      "max_val": 48
+    },
+    "model": {
+      "preset": "hf://unsloth/gemma-3-270m-it",
+      "dtype": null
+    },
+    "lora": {
+      "rank": 8
+    },
+    "train": {
+      "seq_len": 256,
+      "batch_size": 1,
+      "grad_accum_steps": 4,
+      "max_steps": 400,
+      "eval_every": 50,
+      "log_every": 10,
+      "lr": 0.0002,
+      "warmup_steps": 20,
+      "min_lr_ratio": 0.1,
+      "weight_decay": 0.01,
+      "grad_clip": 1.0,
+      "early_stopping_patience": 2,
+      "eval_batch_size": 1,
+      "mixed_precision": null
+    },
+    "out": {
+      "dir": "checkpoints/smoke",
+      "results": "results/train_smoke.json",
+      "log_csv": "results/train_smoke_log.csv",
+      "tensorboard": "runs/smoke"
+    },
+    "hub": {
+      "repo_id": "nikhil3495/gemma-recipe-lora"
+    }
+  },
+  "data": {
+    "train_examples": 1396,
+    "val_examples": 48,
+    "before_length_filter": {
+      "train": 2000,
+      "val": 100
+    },
+    "dropped_overlength": {
+      "train": 604,
+      "val": 36
+    },
+    "train_tasks": {
+      "recipe": 996,
+      "pairing": 400
+    }
+  },
+  "model": {
+    "preset": "hf://unsloth/gemma-3-270m-it",
+    "total_params": 268632704,
+    "trainable_params": 534528,
+    "trainable_pct": 0.19898098483198828,
+    "lora_rank": 8,
+    "load_sec": 17.6
+  },
+  "training": {
+    "steps_run": 400,
+    "max_steps": 400,
+    "early_stopped": false,
+    "resumed_from_step": 200,
+    "batch_size": 1,
+    "grad_accum_steps": 4,
+    "effective_batch": 4,
+    "best_step": 400,
+    "best_val_loss": 1.4344950914382935,
+    "final_train_loss": 1.2722784280776978,
+    "train_seconds": 8478.2,
+    "sec_per_step": 42.39,
+    "history": {
+      "accuracy": [
+        0.5778534412384033,
+        0.6508738994598389,
+        0.6978159546852112,
+        0.7170308232307434,
+        0.6901004910469055,
+        0.7205873131752014,
+        0.7160707116127014,
+        0.7065768837928772
+      ],
+      "loss": [
+        2.288008689880371,
+        1.6275396347045898,
+        1.3599969148635864,
+        1.255162239074707,
+        1.3869307041168213,
+        1.2014182806015015,
+        1.2193576097488403,
+        1.2722784280776978
+      ],
+      "val_accuracy": [
+        0.5789203643798828,
+        0.6516219973564148,
+        0.6659828424453735,
+        0.6698294878005981,
+        0.6727785468101501,
+        0.674958348274231,
+        0.6766251921653748,
+        0.6761122941970825
+      ],
+      "val_loss": [
+        1.9936895370483398,
+        1.6446024179458618,
+        1.5402666330337524,
+        1.505208969116211,
+        1.4667624235153198,
+        1.445542812347412,
+        1.438016414642334,
+        1.4344950914382935
+      ],
+      "step": [
+        50,
+        100,
+        150,
+        200,
+        250,
+        300,
+        350,
+        400
+      ]
+    },
+    "eval_every": 50
+  },
+  "memory": {
+    "peak_rss_gb": 3.38,
+    "xla_allocator": "platform",
+    "xla_preallocate": "false"
+  },
+  "val_perplexity": {
+    "base": {
+      "ppl": 30.795944765546512,
+      "nll_per_token": 3.427383017854853,
+      "tokens": 7799,
+      "n": 48
+    },
+    "fine_tuned": {
+      "ppl": 4.207352535495853,
+      "nll_per_token": 1.4368335984581357,
+      "tokens": 7799,
+      "n": 48
+    }
+  },
+  "adapter": {
+    "path": "checkpoints/smoke/adapter.lora.h5",
+    "best_step": 400
+  }
+}

@@ -378,9 +378,8 @@ def train(cfg: dict[str, Any], resume: bool = False) -> dict[str, Any]:
             "best_val_loss": state["best"]["val_loss"],
             "final_train_loss": hist["loss"][-1],
             "train_seconds": round(train_sec, 1),
-            "sec_per_step": round(train_sec / max(1, steps_run - start_step), 2)
-            if steps_run > start_step
-            else None,
+            # cumulative wall-clock over all sessions / all steps (includes any host stalls)
+            "sec_per_step": round(train_sec / max(1, steps_run), 2),
             "history": hist,
             "eval_every": eval_every,
         },
