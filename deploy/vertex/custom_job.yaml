@@ -1,0 +1,33 @@
+# Vertex AI CustomJobSpec for `gcloud ai custom-jobs create --config` (see submit_training.sh).
+# __PLACEHOLDERS__ are substituted by submit_training.sh; do not put secret VALUES here.
+#
+# Credentials: Vertex container env vars are plain name/value pairs, so we pass Secret Manager
+# REFERENCES (resource names) and train_entrypoint.py resolves them at runtime with the job's
+# service account (needs roles/secretmanager.secretAccessor on these secrets).
+workerPoolSpecs:
+  - replicaCount: 1
+    machineSpec:
+      machineType: g2-standard-8          # 8 vCPU, 32 GB RAM
+      acceleratorType: NVIDIA_L4          # 24 GB; bf16 capable -> configs/train_full.yaml as-is
+      acceleratorCount: 1
+    diskSpec:
+      bootDiskType: pd-ssd
+      bootDiskSizeGb: 100
+    containerSpec:
+      imageUri: __IMAGE_URI__
+      env:
+        - name: CONFIG
+          value: __TRAIN_CONFIG__
+        - name: DATA_CONFIG
+          value: configs/data.yaml
+        - name: KAGGLE_USERNAME_SECRET
+          value: projects/__GCP_PROJECT__/secrets/__KAGGLE_USERNAME_SECRET_ID__/versions/latest
+        - name: KAGGLE_KEY_SECRET
+          value: projects/__GCP_PROJECT__/secrets/__KAGGLE_KEY_SECRET_ID__/versions/latest
+        - name: HF_TOKEN_SECRET
+          value: __HF_TOKEN_SECRET_REF__
+baseOutputDirectory:
+  outputUriPrefix: __GCS_OUTPUT__          # Vertex sets AIP_MODEL_DIR=<prefix>/model/
+serviceAccount: __SERVICE_ACCOUNT__
+scheduling:
+  timeout: 21600s                         # hard cap: 6 h of L4 time
