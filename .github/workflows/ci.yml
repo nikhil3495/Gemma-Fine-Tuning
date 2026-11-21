@@ -1,0 +1,41 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  lint-test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      KERAS_BACKEND: jax
+      PYTHONUTF8: "1"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - name: Install (CPU, no gated downloads, no secrets)
+        run: |
+          python -m pip install -U pip
+          python -m pip install -e ".[dev]" "jax==0.12.1" "keras==3.15.1" matplotlib
+      - name: Ruff
+        run: |
+          ruff check .
+          ruff format --check .
+      - name: Pytest (tiny random Keras causal LM)
+        run: pytest
+      - name: Secret scan
+        run: |
+          if git grep -nE "(hf_|AIza|sk-)[A-Za-z0-9]{10,}" -- . ':!*.ipynb'; then
+            echo "Possible secret committed"; exit 1; fi
