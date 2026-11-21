@@ -35,12 +35,17 @@ suggestions with reasons. Code, data pipeline and benchmark: https://github.com/
 ## Usage
 
 ```python
-import os; os.environ["KERAS_BACKEND"] = "jax"
+import os
+
+os.environ["KERAS_BACKEND"] = "jax"
 import keras_hub
+
 lm = keras_hub.models.Gemma3CausalLM.from_preset("{preset}")
-lm.backbone.load_lora_weights("{adapter_file}")   # rank read from the file
-prompt = ("<start_of_turn>user\\nSuggest 5 ingredients that pair well with basil, with a one-line "
-          "reason each.<end_of_turn>\\n<start_of_turn>model\\n")
+lm.backbone.load_lora_weights("{adapter_file}")  # rank read from the file
+prompt = (
+    "<start_of_turn>user\\nSuggest 5 ingredients that pair well with basil, with a one-line "
+    "reason each.<end_of_turn>\\n<start_of_turn>model\\n"
+)
 print(lm.generate(prompt, max_length=256))
 ```
 

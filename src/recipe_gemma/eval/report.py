@@ -54,8 +54,10 @@ def results_table(res_dir: Path, cfg: dict[str, Any]) -> str:
     human = _load(REPO_ROOT / "results" / "human_preference.json")
     if ev is None:
         return (
-            "_Evaluation not yet run._ Run: `make eval` (or "
-            f"`python -m recipe_gemma.eval --config {cfg.get('_config_path')}`)."
+            "**Benchmark (base vs fine-tuned generations, perplexity, pairing/structure validity) "
+            "not yet run.** Run one model at a time: "
+            f"`python -m recipe_gemma.eval --config {cfg.get('_config_path')} --models base`, then "
+            "`--models finetuned`, then `--stages metrics,judge`, then this report."
         )
     m, st = ev["metrics"], ev.get("status", {})
     hdr = "| Metric (95% bootstrap CI) | " + " | ".join(NAMES[x] for x in MODELS) + " |"

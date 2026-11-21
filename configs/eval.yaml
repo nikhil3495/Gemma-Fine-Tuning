@@ -20,7 +20,7 @@ decoding:                           # identical for all three models
   k: 40
   p: 0.95
   seed: 1234
-  batch_size: 4
+  batch_size: 2
   max_length: {recipe: 576, pairing: 256}        # Gemma: prompt + output tokens
   max_output_tokens: {recipe: 512, pairing: 200} # Gemini: output tokens only
 
@@ -35,7 +35,7 @@ judge:
 
 perplexity:
   seq_len: 576
-  batch_size: 2
+  batch_size: 1                     # memory: one 576 x 262k logit tensor at a time
 
 bootstrap: {n: 2000, seed: 1234}
 out_dir: results
