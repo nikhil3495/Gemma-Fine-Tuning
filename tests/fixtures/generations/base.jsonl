@@ -1,0 +1,3 @@
+{"id": "r1", "task": "recipe", "user": "Write a recipe for a quick weeknight dal using red lentils, cumin and spinach.", "output": "Dal: cook lentils. Add cumin. Add spinach. Serve.", "model": "base"}
+{"id": "r2", "task": "recipe", "user": "Create a vegetarian pasta recipe using roasted butternut squash and sage.", "output": "Cook pasta. Add squash. Add sage. Done.", "model": "base"}
+{"id": "p1", "task": "pairing", "user": "Suggest three ingredients that pair well with dark chocolate and explain why.", "output": "Chocolate goes with many things like vanilla, sugar and milk.", "model": "base"}
