@@ -342,6 +342,10 @@ class TinyPositional(keras.layers.Layer):
         t = keras.ops.shape(x)[1]
         return x + self.table[None, :t, :]
 
+    def compute_output_shape(self, input_shape: Any) -> Any:
+        """Shape-preserving (avoids symbolic broadcasting of the sliced table)."""
+        return input_shape
+
     def get_config(self) -> dict[str, Any]:
         return {**super().get_config(), "max_len": self.max_len, "dim": self.dim}
 
