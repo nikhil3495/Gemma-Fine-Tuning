@@ -1,0 +1,11 @@
+# Evaluation of the full run: python -m recipe_gemma.eval --config configs/eval_full.yaml
+extends: eval.yaml
+profile: full
+n_per_task: 100
+model:
+  preset: gemma3_instruct_1b
+  adapter: checkpoints/full/adapter.lora.h5
+train_results: results/train_full.json
+train_log: results/train_full_log.csv
+out_dir: results/full
+generations_dir: results/full/generations

@@ -1,0 +1,42 @@
+# Evaluation (smoke): python -m recipe_gemma.eval --config configs/eval.yaml
+seed: 1234
+profile: smoke
+n_per_task: 25                      # held-out prompts per task (smoke 25+25=50; full 100+72)
+eval_prompts: data/artifacts/eval_prompts.jsonl
+graph: data/artifacts/flavor_graph.json.gz
+cooccur: data/artifacts/cooccur_train.json.gz
+
+model:
+  preset: hf://unsloth/gemma-3-270m-it
+  adapter: checkpoints/smoke/adapter.lora.h5
+train_results: results/train_smoke.json
+train_log: results/train_smoke_log.csv
+
+models: [base, finetuned, gemini]   # gemini is skipped (and marked "not run") without an API key
+
+decoding:                           # identical for all three models
+  sampler: top_k
+  temperature: 0.7
+  k: 40
+  p: 0.95
+  seed: 1234
+  batch_size: 4
+  max_length: {recipe: 576, pairing: 256}        # Gemma: prompt + output tokens
+  max_output_tokens: {recipe: 512, pairing: 200} # Gemini: output tokens only
+
+gemini:
+  model: gemini-3.8-flash
+
+judge:
+  enabled: true                     # needs GEMINI_API_KEY; otherwise "not run (no API key)"
+  model: gemini-3.8-flash
+  temperature: 0.0
+  pairs: [[finetuned, base], [finetuned, gemini], [gemini, base]]
+
+perplexity:
+  seq_len: 576
+  batch_size: 2
+
+bootstrap: {n: 2000, seed: 1234}
+out_dir: results
+generations_dir: results/generations
